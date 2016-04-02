@@ -30,6 +30,6 @@ Search for controlP5 and install it (I used version 2.2.5)
 ## Update skecth to github
 Use Atlassian Sourcetree
 
-Use Commit and add tag
+Use Commit to remote branch and add tag, push to master
 
 ## Update sketch from Github to RPi

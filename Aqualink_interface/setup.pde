@@ -250,6 +250,7 @@ void initSerialPort() {
     //===========================//
     // Check for valid COM Ports //
     //===========================//
+    print("RCOMPN: "+readComPortName+"<<");
     if ( readComPortName.equals("") ) {
       print("Available COM Ports:");
       // Use first (non-blacklisted) port)
