@@ -185,6 +185,7 @@ void readSetupValues() {
   blackListPorts.add("/dev/cu.usbserial-FTE5IHLD");
   blackListPorts.add("/dev/tty.usbserial-FTE5IHLD");
   blackListPorts.add("/dev/ttyAMA0");
+  blackListPorts.add("/dev/ttyS0");
 
   // readComPortName            = "COM6";      // Active COM port connected to Simulator or RS485 port
   // readComPortName            = "/dev/tty.usbserial-DA00U8Q4"
@@ -250,7 +251,6 @@ void initSerialPort() {
     //===========================//
     // Check for valid COM Ports //
     //===========================//
-    print("RCOMPN: "+readComPortName+"<<");
     if ( readComPortName.equals("") ) {
       print("Available COM Ports:");
       // Use first (non-blacklisted) port)
