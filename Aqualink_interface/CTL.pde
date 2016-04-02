@@ -4,10 +4,10 @@
 //=======================//
 //===== Key Presses =====//
 // Commands //
-final int CMD_CTL_PROBE     = CMD_PROBE;    //0x00
-final int CMD_CTL_STATUS    = CMD_STATUS;   //0x02
-final int CMD_CTL_MSG       = CMD_MSG;      //0x03
-final int CMD_CTL_MSG_LONG  = CMD_MSG_LONG; //0x04
+final int CMD_CTL_PROBE      = CMD_PROBE;    //0x00
+final int CMD_CTL_STATUS     = CMD_STATUS;   //0x02
+final int CMD_CTL_MSG        = CMD_MSG;      //0x03
+final int CMD_CTL_MSG_LONG   = CMD_MSG_LONG; //0x04
 
 final int CMD_CTL_0x08       = 0x08;
 /* KEYPRESS CODES */

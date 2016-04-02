@@ -117,7 +117,7 @@ void initGUI() {
         logValueGroupsEnabled += "TEMP ";
       }
     }
-    println("GRPS: "+logValueGroupsEnabled);
+    //println("GRPS: "+logValueGroupsEnabled);
     if ( areWeEmulatingPowerCenter() ) {
       frameRate(10000); // Go Fast!
     }

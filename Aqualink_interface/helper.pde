@@ -1,5 +1,10 @@
 void unknownResponse(int deviceID, int command, int response, int startNr, int endNr) {
-  logTxtLn("Unknown "+getDestinationName(deviceID)+" ("+reportVal(deviceID, 2)+") Response: "+reportVal(response, 2)+" to command: "+reportVal(command, 2), LOGTXT_WARNING);
+  String commandDescription = "";
+  if ( command == UNKNOWN_COMMAND ) {
+    commandDescription = "\"Unknown Command\": ";
+  }
+  commandDescription += reportVal(command, 2);
+  logTxtLn("Unknown "+getDestinationName(deviceID)+" ("+reportVal(deviceID, 2)+") Response: "+reportVal(response, 2)+" to command: "+commandDescription, LOGTXT_WARNING);
   logTxtData(startNr, endNr);
 }
 
@@ -74,6 +79,15 @@ File[] listFiles(String dir) {
 boolean initLogFiles() {
   // Initialize timing values
   initLogTimes();
+//  Date d = new Date();
+  Date d = noDateFound;
+  //  for ( int i=0; i< 20; i++ ) {
+  //    delay(1000);
+  //d = Date();
+  rawLogFileStartTimestamp = d.getTime();
+  //    println(i+" "+rawLogFileStartTimestamp);
+  //  }
+
   // Open Output and VALUES log files
   // Setup the file with the logs
   if ( areWeReadingRawLogFile() ) {
@@ -81,11 +95,13 @@ boolean initLogFiles() {
   } else {
     if ( useLogFileNameBase == "" ) {
       //logFileNameBase = "Jandy_log_"+nf(day(), 2)+nf(month(), 2)+year()+nf(hour(), 2)+nf(minute(), 2)+nf(second(), 2); // Record log data to this file
-      logFileNameBase = "Jandy_log_"+nf(day(), 2)+"-"+nf(month(), 2)+"-"+year()+"_"+nf(hour(), 2)+":"+nf(minute(), 2)+":"+nf(second(), 2); // Record log data to this file
+      // logFileNameBase = "Jandy_log_"+nf(day(), 2)+"-"+nf(month(), 2)+"-"+year()+"_"+nf(hour(), 2)+":"+nf(minute(), 2)+":"+nf(second(), 2); // Record log data to this file
+      logFileNameBase = "Jandy_log_"+rawLogFileDateFormat.format(rawLogFileStartTimestamp); // Record log data to this file
     } else {
       logFileNameBase = useLogFileNameBase;
     }
   }
+
   if ( logFileNameBase == "" ) {
     println("logFileNameBase is empty, Aborting!");
     return false;
@@ -99,7 +115,8 @@ boolean initLogFiles() {
     return false;
   }
   logFileHandle = createWriter(outputLogFileName);
-  logTxtLn("Opened output logFile "+outputLogFileName+" ==> "+logFileHandle, LOGTXT_INFO);
+  logTxtLn("Opened output logFile "+outputLogFileName+" ==> "+logFileHandle+" at: "+d+" = "+rawLogFileStartTimestamp, LOGTXT_INFO);
+
   // RAW data and timestamp output log //  
   if ( areWeReadingRawLogFile() ) {
     logRawData = 0;
@@ -123,8 +140,10 @@ boolean initLogFiles() {
       return false;
     }
     rawLogFileHandle = createWriter(RAWLogFileName);
+    rawLogFileValuesWritten = 0;
     logTxtLn("Opened RAW    logFile "+RAWLogFileName+" ==> "+rawLogFileHandle, LOGTXT_INFO);
-    rawLogFileHandle.println(RAWLOGFILEHEADER);
+
+    printToRawLogFile(RAWLOGFILEHEADER+" "+rawLogFileStartTimestamp+" "+rawLogFileDateFormat.format(rawLogFileStartTimestamp)+"\n");
   }
   if ( areWeReadingRawLogFile() ) {
     //======================//
@@ -132,15 +151,50 @@ boolean initLogFiles() {
     //======================//
     logFileReader = createReader(RAWLogFileName);
     logTxtLn("Opened RAW    logFile "+RAWLogFileName, LOGTXT_INFO);
+    //    String[] dateVals = match(RAWLogFileName, "Jandy_log_(.*?)-(.*?)-(.*?)_(.*?)_RAW.txt");
+    //    String dateString = dateVals[1]+"/"+dateVals[2]+"/"+dateVals[3]
+    String[] dateVals = match(RAWLogFileName, "Jandy_log_(.*?)_RAW.txt");
+
+    Date df = getDateFromString(dateVals[1]);
+
+    println("FOUND DATE ==>" +dateVals[1]+ " == "+df.getTime()+" == "+df+" ==> "+rawLogFileDateFormat.format(df.getTime()));
   }
   //====================//
   // Print general info //
   //====================//
   printSetupInfo();
   if ( areWeReadingRawLogFile() ) {
-  println("\nProcessing file #"+rawLogFileReadNameBaseNr+" ==> "+logFileNameBase);
+    println("\nProcessing file #"+rawLogFileReadNameBaseNr+" ==> "+logFileNameBase);
   }
   return true;
+}
+
+Date getDateFromString(String str) {
+  Date df = new Date();
+  try {
+    // rawLogFileDateFormat = new SimpleDateFormat("dd-MM-yyyy_HH:mm:ss");
+    df =  rawLogFileDateFormat.parse(str);
+  }
+  catch (Exception e) {
+    //print("EXC: "+e);
+    try {
+      df =  rawLogFileDateFormatShort.parse(str);
+    }
+    catch (Exception eS) {
+      print("EXC: "+eS);
+    }
+  }
+  return df;
+}
+
+void printToRawLogFile( String str ) {
+  //print("PRRWLF "+str+"<<");
+  rawLogFileHandle.print(str);
+  rawLogFileHandle.flush();
+  rawLogFileValuesWritten++;
+  if ( rawLogFileValuesWritten >= rawLogFileValuesWrittenMax ) {
+    newLogFilesNeeded = true;
+  }
 }
 
 String getRawLogFileReadNameBase() {
@@ -192,6 +246,11 @@ void closeLogFiles() {
   if (!(valuesLogFileHandle == null) ) {
     valuesLogFileHandle.close();
   }
+}
+
+boolean startNewLogFiles() {
+  closeLogFiles();
+  return initLogFiles();
 }
 
 
@@ -322,6 +381,14 @@ void initValues() {
   replayTimeD = 0;
 
   lastValuesLogString = "";
+
+  try {
+    noDateFound = rawLogFileDateFormat.parse("01-01-2000_00:00:00.000");
+  } 
+  catch (Exception e) {
+    print("EXCEPTION: "+e);
+  }
+  //println("NO DATE: "+noDateFound);
 }
 
 String cleanText(float number, int afterComma, int total) {

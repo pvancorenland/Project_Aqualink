@@ -53,8 +53,8 @@ boolean processIncomingData(long timestamp, int readData ) {
   // Set timestamp and update "Current time"
   timestamp = updateCurrentByteTimestamp(timestamp);
   if ( (logRawData == 1) ) {
-    rawLogFileHandle.print(timestamp+" ");
-    rawLogFileHandle.print(readData+" ");
+    printToRawLogFile(timestamp+" ");
+    printToRawLogFile(readData+" ");
   }
   if ( showDebug(DEBUG_ON) == 1 ) {
     logTxt(reportVal(readData, 2)+" ", LOGTXT_DEBUG);
@@ -278,7 +278,14 @@ void resetProcessIncomingData(String reason, int stopVal, int readOutStatus) {
 
 void processAllIncomingData() {
   while (currentOpenPort.available () > 0) {
-    processIncomingData(-1, currentOpenPort.read());
+    if ( processIncomingData(-1, currentOpenPort.read()) ) {
+      // We finished a command/response
+      if ( newLogFilesNeeded ) {
+        // Current log file grew too big, let's start a new one
+        newLogFilesNeeded = false;
+        startNewLogFiles();
+      }
+    }
   }
 }
 
@@ -1331,7 +1338,7 @@ long updateCurrentByteTimestamp(long timeStampMicro) {
   } else {
     logTimeStampMicroDelta         = timeStampMicro;
     currentByteTimeStampMicroTime += logTimeStampMicroDelta;
-    //print("CBTST: "+currentByteTimeStampMicroTime);
+    //logFilePrint(0, "CBTST: "+currentByteTimeStampMicroTime);
   }
   //print(" DELTA: "+logTimeStampMicroDelta);
   // Update "Current time"
@@ -1451,16 +1458,20 @@ void writeValuesToLogFile(int init) {
   }
   if ( (displayThisOption("onlyReportNewValuesinLog") == false) | (logString.equals(lastValuesLogString) == false) ) {
     valuesLogFileHandle.println(logStringTime + logString);
+    lastValuesLogString = logString;
+    //println("LOGSTR: "+logString);
+  } else {
+    //println("NOLOGSTR");
   }
-  lastValuesLogString = logString;
+
   if ( init == 0 ) {
     updateReadoutValuesText(readOutValuesText);
   }
-//  println("LS: "+logString);
+  //  println("LS: "+logString);
 }
 
 boolean includeValueinLogFile(int valueMask) {
-  
+
   if ( (reportValuesInLogfile&valueMask) == valueMask ) {
     return true;
   } else {
@@ -1525,8 +1536,16 @@ void readRawLogFile() {
     println("Whoops, the file "+logFileNameBase+RAWLogFileExtension+" seems to be empty!");
     noData = 1;
   } else {
-    if ( rawLogFileReadLine.equals(RAWLOGFILEHEADER) ) {
+    if ( rawLogFileReadLine.indexOf(RAWLOGFILEHEADER) == 0 ) {
       rawLogFileHasTimestamp = 1;
+      rawLogFileReadLine += " -1";
+      rawLogFileReadLine = rawLogFileReadLine.substring(RAWLOGFILEHEADER.length());
+      String[] tmpVals = split(rawLogFileReadLine, " ");
+      String rawLogFileDateStr = tmpVals[2];
+      Date df = getDateFromString(rawLogFileDateStr);
+      println("DATE ====> "+rawLogFileDateStr+" === "+df.getTime());
+      
+      
       try {
         rawLogFileReadLine = logFileReader.readLine();
       } 
@@ -1584,7 +1603,7 @@ void processRAWLogFileUntilRefreshTimeMicroUpdate() {
     }
   } else {
     while (processNextRAWLogFilePortion() ) {
-        flushLogFiles();
+      flushLogFiles();
     };
   }
   printReplayStatistics();

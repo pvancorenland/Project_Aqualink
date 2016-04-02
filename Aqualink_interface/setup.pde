@@ -19,7 +19,7 @@ void readSetupValues() {
 
   displayOptionNameList = "Display options           = \"";
   setDisplayOption("showUnprocessedData", false);  // Show the incoming hex bytes before they are processed
-  setDisplayOption("showRawIncomingHexData", false);  // Show incoming data (in HEX) as it is being read
+  setDisplayOption("showRawIncomingHexData", true);  // Show incoming data (in HEX) as it is being read
   setDisplayOption("showVerboseDataInLog", true);  // Show Verbose Data in the log file
   setDisplayOption("suppressChecksumErrors", false);  // Don't complain about Checksum errors
   setDisplayOption("showDroppedData", true);  // Show the dropped data (due to checksum errors, colissions,...)
@@ -31,7 +31,7 @@ void readSetupValues() {
   setDisplayOption("suppressReadoutInfo", false);  // Suppress info about the readout (LOGTXT_INFO lines)
   setDisplayOption("suppressReadoutErrors", false);  // Suppress errors about the readout (Dropped packets,...)
   setDisplayOption("showCommandResponse", true);  // Show the response to the MASTER
-  setDisplayOption("addSpaceBetweenDevices", true);  // Add extra line between device outputs
+  setDisplayOption("addSpaceBetweenDevices", false);  // Add extra line between device outputs
   setDisplayOption("showProcessedBytesStatistics", false);  // Show Statistics about the processed bytes
   setDisplayOption("pulseDrawWithZeros", false);  // Send 0x00 on serial port (if applicable) everytime the draw() loop restarts
   setDisplayOption("addCSValueToLogTxt", false);  // Show checksum values in logTxt prints
@@ -40,7 +40,7 @@ void readSetupValues() {
   setDisplayOption("useSteppedReplay", false); // 
   setDisplayOption("toggleSteppedReplay", false); // 
   setDisplayOption("printReplayStatistics", false); // 
-  setDisplayOption("onlyReportNewValuesinLog", true); // 
+  setDisplayOption("onlyReportNewValuesinLog", false); // 
   setDisplayOption("useRefreshTime", true); // 
 
 
@@ -124,7 +124,11 @@ void readSetupValues() {
   // rawLogFileReadNameBase = "Jandy_log_1112015204457";
   //rawLogFileReadNameBase = "Jandy_log_262015175420";
   // rawLogFileReadNameBase = "Jandy_log_27-12-2015_12:56:07";
-  rawLogFileReadNameBase = "Jandy_log_94201518599_Jacy_Chemlink";
+  // rawLogFileReadNameBase = "Jandy_log_94201518599_Jacy_Chemlink";
+  // rawLogFileReadNameBase = "test";
+  rawLogFileReadNameBase = "Jandy_log_10-02-2016_21:39:54";
+  rawLogFileReadNameBase = "Jandy_log_02-11-2016_22:58:09.234";
+  rawLogFileReadNameBase = "Jandy_log_02-11-2016_23:10:52.126";
 
   useLogFileNameBase = "";  // If this is "", the logFile name Base will be date derived
 
@@ -145,7 +149,7 @@ void readSetupValues() {
   // addDeviceDisplayMask(DEV_SPA_MASK);
   // addDeviceDisplayMask(DEV_AQUALINK_2_MASK+3);
   // addDeviceDisplayMask(DEV_ONETOUCH_MASK+3);
-  addDeviceDisplayMask(DEV_CHEMLINK_MASK);
+  // addDeviceDisplayMask(DEV_CHEMLINK_MASK);
   // addDeviceDisplayMask(0x160); // Intelliflo pump
   //addDeviceDisplayMask(0xFF);  // Don't show any devices (just warnings, errors,...)
 
@@ -229,8 +233,8 @@ void readSetupValues() {
   initDeviceDisplayMasks();
   initEmulatePowerCenterIDs();
   debugMasksList = "DEBUG Mask                = "+reportVal(debug, 2);
-  reportValuesInLogfileList = "REPORT Values in Log File: "+binary(reportValuesInLogfile, 16);
-  logValueGroupsEnabled = "LOG Values groups: "+logValueGroupsEnabled;
+  reportValuesInLogfileList = "REPORT Values in Log File = "+binary(reportValuesInLogfile, 16);
+  logValueGroupsEnabled = "LOG Values groups         = "+logValueGroupsEnabled;
   if ( showDisplayOptions + showInfoTextCanvas + showPlayButton + showValuesCanvas == 0 ) {
     enableGUI = false;
   }
@@ -281,6 +285,14 @@ void initSerialPort() {
       logTxt("Opening COM port "+readComPortName, LOGTXT_INFO );
       currentOpenPort = new Serial(this, readComPortName, serialSpeed);
       logTxtLn(" ==> "+currentOpenPort, LOGTXT_INFO );
+      /*
+      println("Dumping buffer");
+       int dumpCnt = 0;
+       while (currentOpenPort.read() >=0 ) {
+       dumpCnt++;
+       };
+       println("Done Dumping "+dumpCnt+" values");
+       */
     }
   }
   processDataValuesCtr  = 0;

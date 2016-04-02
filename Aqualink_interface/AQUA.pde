@@ -267,8 +267,17 @@ PrintWriter    logFileHandle;
 PrintWriter    rawLogFileHandle;
 PrintWriter    valuesLogFileHandle;
 BufferedReader logFileReader;
+long           rawLogFileValuesWritten = 0;
+long           rawLogFileValuesWrittenMax = 16384;
+boolean        newLogFilesNeeded = false;
+long           rawLogFileStartTimestamp;
+    //SimpleDateFormat rawLogFileDateFormat = new SimpleDateFormat("MM-dd-yyyy_HH:mm:ss");
+    //SimpleDateFormat rawLogFileDateFormatLong = new SimpleDateFormat("MM-dd-yyyy_HH:mm:ss.SSS");
+    SimpleDateFormat rawLogFileDateFormat = new SimpleDateFormat("MM-dd-yyyy_HH:mm:ss.SSS");
+    SimpleDateFormat rawLogFileDateFormatShort = new SimpleDateFormat("MM-dd-yyyy_HH:mm:ss");
+Date noDateFound = new Date();
 
-
+  
 //======================================//
 // Set up COM port for RS485 connection //
 //======================================//
@@ -370,7 +379,7 @@ int showDisplayOptions = 1;
 int showInfoTextCanvas = 1;
 int showPlayButton     = 1;
 int showValuesCanvas   = 1;
-String enabledCanvasOptions = "Enabled Canvas options:";
+String enabledCanvasOptions = "Enabled Canvas options    =";
 
 int waitingForNextStepClick ; //Used as a boolean to step through the emulator
 boolean dontOverWriteOutputFiles = true;
@@ -428,12 +437,12 @@ int pumpSTARTVal       ;
 int checkSumIn;
 String checkSumErrorString;
 int checkSumError;
-int logRawData                      = 1;
-int droppedCtr                      = 0;
-int[] droppedPackets                = new int[MAXNRDROPPEDPACKETS];
+int logRawData                           = 1;
+int droppedCtr                           = 0;
+int[] droppedPackets                     = new int[MAXNRDROPPEDPACKETS];
 long previouslastReceivedByteTimeMicro   = 0;
 long lastReceivedByteTimeMicro           = 0;
-long[] processedTimeDelta           = new long[2];
+long[] processedTimeDelta                = new long[2];
 long lastShowTimeMicro     = 0;
 long currentShowTimeMicro  = 0;
 long showTimeMicroDelta    = 0;
