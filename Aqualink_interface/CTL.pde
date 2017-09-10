@@ -8,8 +8,8 @@ final int CMD_CTL_PROBE      = CMD_PROBE;    //0x00
 final int CMD_CTL_STATUS     = CMD_STATUS;   //0x02
 final int CMD_CTL_MSG        = CMD_MSG;      //0x03
 final int CMD_CTL_MSG_LONG   = CMD_MSG_LONG; //0x04
-
 final int CMD_CTL_0x08       = 0x08;
+
 /* KEYPRESS CODES */
 final int CTL_ACK_NOBUTTON   = 0x00;
 final int CTL_ACK_PUMP       = 0x02;
@@ -97,11 +97,12 @@ final int CTL_STAT_HTR_SOL_EN[]  = {
 //final String CTLAIRTEMPMSG  = " AIR TEMP"; // rev R
 final String CTLPOOLTEMPMSG = "Pool Temp";
 final String CTLAIRTEMPMSG  = " Air Temp";
+final String CTLSPATEMPMSG  = "Spa Temp ";
 final int CTLTEMPMSGLENGTH  = 9;
 //int poolTemp;
 //int airTemp;
 
-int processCTLCommand (int command, int destination) {
+int processCTLCommand(int command, int destination) {
   doNothing(destination);
   switch(command) {
     case(CMD_CTL_PROBE):
@@ -109,37 +110,50 @@ int processCTLCommand (int command, int destination) {
     return 1;
     case(CMD_CTL_STATUS) :
     logTxt("STATUS", LOGTXT_TYPE);
-    logTxt(checkCTLButtonStatus(2, processDataValuesCtr), LOGTXT_DATA);
+    String status = checkCTLButtonStatus(2, processDataValuesCtr);
+    String[] statusList = split(status, " ");
+    logTxt(status, LOGTXT_DATA);
+    for ( int i = 0; i< CTLDEVICESLISTSPLIT.length; i++ ) {
+      int found = 0;
+      for ( int j=0; j< statusList.length; j++ ) {
+        if ( CTLDEVICESLISTSPLIT[i].equals(statusList[j]) ) {
+          found = 1;
+          //println("i: "+i+" = "+CTLDEVICESLISTSPLIT[i]+"<> j:"+j+" = "+statusList[j]);
+        }
+          LOG_DEVICES_LIST[i] = found;
+      }
+    }
     return 1;
     case(CMD_CTL_MSG) :
     logTxt("MESSAGE", LOGTXT_TYPE);
-    logTxt("ARG="+reportVal(processDataValues[2], 2)+" DATA:", LOGTXT_DATA);
+    logTxt("ARG="+reportVal(processDataValues[2], 2)+" DATA: ", LOGTXT_DATA);
     logTxt(printDataBytes(0, 1, 3, processDataValuesCtr), LOGTXT_DATA);
+    /*
+     "Pool Temp  72HDF/F "
+     " Air Temp 72HDF/F  "
+     "Spa Temp   72HDF/F "
+     */
     if ( compareMessage( 3, CTLTEMPMSGLENGTH, CTLPOOLTEMPMSG) == 1) {
       int poolTemp = readTemp(CTLTEMPMSGLENGTH + 4);
-      //print("POOL TEMP:");
-      //print(poolTemp);
-      //println("F");
       LOG_POOLTEMP_VAL = str(poolTemp);
     }
     if ( compareMessage( 3, CTLTEMPMSGLENGTH, CTLAIRTEMPMSG) == 1 ) {
       int airTemp = readTemp(CTLTEMPMSGLENGTH + 3);
-      /*
-      print("AIR TEMP:");
-       print(airTemp);
-       println("F");
-       */
       LOG_AIRTEMP_VAL = str(airTemp);
+    }
+    if ( compareMessage( 3, CTLTEMPMSGLENGTH, CTLSPATEMPMSG) == 1 ) {
+      int spaTemp = readTemp(CTLTEMPMSGLENGTH + 4);
+      LOG_SPATEMP_VAL = str(spaTemp);
     }
     return 1;
     case(CMD_CTL_MSG_LONG) :
     logTxt("MESSAGE LONG", LOGTXT_TYPE);
-    logTxt("ARG="+reportVal(processDataValues[2], 2)+" DATA:", LOGTXT_DATA);
+    logTxt("ARG="+reportVal(processDataValues[2], 2)+" DATA: ", LOGTXT_DATA);
     logTxt(printDataBytes(0, 1, 3, processDataValuesCtr), LOGTXT_DATA);
     return 1;
     case(CMD_CTL_0x08):
     logTxt("CMD 0x08", LOGTXT_TYPE);
-    logTxt("ARG="+reportVal(processDataValues[2], 2)+" DATA:", LOGTXT_DATA);
+    logTxt("ARG="+reportVal(processDataValues[2], 2)+" DATA: ", LOGTXT_DATA);
     logTxt(printDataBytes(0, 1, 3, processDataValuesCtr), LOGTXT_DATA);
     return 1;
   default:
@@ -244,7 +258,7 @@ void processCTLButtonData( int startNr, int endNr) {
   logTxt(initString, LOGTXT_DATA);
 }
 
-String checkCTLButtonStatus ( int startPos, int endPos) {
+String checkCTLButtonStatus( int startPos, int endPos) {
   String returnVal = "";
   if ( buttStat(CTL_EXPECTED_BUTTSTAT_BYTES, CTL_STAT_AUX1, startPos, endPos) == 1) {
     returnVal += "SPILLWAY " ;
@@ -285,14 +299,16 @@ String checkCTLButtonStatus ( int startPos, int endPos) {
   if ( buttStat(CTL_EXPECTED_BUTTSTAT_BYTES, CTL_STAT_HTR_SPA_ON, startPos, endPos) == 1) {
     returnVal += "SPA_HEAT_ON " ;
   }
-  if ( buttStat(CTL_EXPECTED_BUTTSTAT_BYTES, CTL_STAT_HTR_SOL_EN, startPos, endPos) == 1) {
-    returnVal += "SOL_HEAT_EN " ;
-  }
-  if ( buttStat(CTL_EXPECTED_BUTTSTAT_BYTES, CTL_STAT_HTR_SOL_ON, startPos, endPos) == 1) {
-    returnVal += "SOL_HEAT_ON " ;
-  }
+  /*
+                          if ( buttStat(CTL_EXPECTED_BUTTSTAT_BYTES, CTL_STAT_HTR_SOL_EN, startPos, endPos) == 1) {
+   returnVal += "SOL_HEAT_EN " ;
+   }
+   if ( buttStat(CTL_EXPECTED_BUTTSTAT_BYTES, CTL_STAT_HTR_SOL_ON, startPos, endPos) == 1) {
+   returnVal += "SOL_HEAT_ON " ;
+   }
+   */
   if ( returnVal == "" ) {
     return "NIL";
   } 
-  return returnVal;
+  return trim(returnVal);
 }

@@ -1,7 +1,10 @@
 //==========================//
 // TODO
+//      if ( !!areWeReadingRawLogFile() ) { <== in emulators.pde
+ 
 // Proliferate unknownResponse command
 /*
+Clean up checkSPAButtonResponse()
 STILL CRASHES:
  drwxr-xr-x@   15 pjvancor  pjvancor_      510 Nov 19 14:54 ..
  -rw-r--r--@    1 pjvancor  pjvancor_   106496 Nov 19 19:57 Jandy_log_26201517438_RAW.txt

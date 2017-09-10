@@ -1,5 +1,5 @@
 int emulateThisDevice(int destination) {
-  if ( readFileData == 1 ) {
+  if ( readFileData == READFILEDATA_READ_PROCESS ) {
     return 0;
   }
   for ( int i = 0; i<emulateDeviceIDsCtr; i++ ) {
@@ -10,13 +10,13 @@ int emulateThisDevice(int destination) {
   return 0;
 }
 
-void send_ACK(String ackDevice, int nrACKZeros) {
+void send_ACK(String ackDevice, int nrACKZeros, int command) {
   sendDataValues[0] = CMD_ACK;
   for ( int i=1; i<= nrACKZeros; i++ ) {
     sendDataValues[i] = NULChar;
   }
   sendEmulatorData(DEV_MASTER_MASK, nrACKZeros+1);
-  emulatorInfo("<== EMU ACK: "+ackDevice);
+  emulatorInfo("<== EMU ACK for "+ackDevice+" : "+command);
 }
 
 void sendByte(int val ) {
@@ -34,7 +34,15 @@ void emulateAllAvailableData() {
       // Process the emulator data first
       int data = processEmulatorData();
       // This takes about 1.34ms in order to send the Serial data
-      if ( readFileData == 0 ) {
+      
+      
+    // WHAT IS THIS !! BELOW?
+    //----------------------
+    //----------------------
+      
+      
+      
+      if ( !!areWeReadingRawLogFile() ) {
         // We're not reading (or replaying) a logFile
         if ( debugThis( DEBUG_RECEIVELINE )) {
           print(char(data)+"="+reportVal(data, 2)+" ");
@@ -86,7 +94,7 @@ int processEmulatorData() {
   // Return it as a value
   int val = emulatorDataValues[emulatorDataValuesCtrCurrent];
   // Send the response
-  //if ( readFileData == 0 ) {
+  //if ( readFileData == READFILEDATA_READ_PROCESS ) {
   //  currentOpenPort.write(val);
   //} 
   if ( displayThisOption("showRawIncomingHexData") ) {

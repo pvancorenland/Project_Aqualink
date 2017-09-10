@@ -154,17 +154,26 @@ final int LOG_PUMPRPM_INCLUDE  = 32;
 final int LOG_PUMPWATT_INCLUDE = 64;
 final int LOG_AIRTEMP_INCLUDE  = 128;
 final int LOG_POOLTEMP_INCLUDE = 256;
+final int LOG_SPATEMP_INCLUDE  = 512;
+final int LOG_DEVICES_LIST_INCLUDE  = 1024;
 
-final String LOG_TIME_NAME     = "TIME";
-final String LOG_ORP_NAME      = "ORP ";
-final String LOG_PH_NAME       = "PH  ";
-final String LOG_SALTPCT_NAME  = "PCT ";
-final String LOG_SALTPPM_NAME  = "PPM ";
-final String LOG_PUMPGPM_NAME  = "GPM ";
-final String LOG_PUMPRPM_NAME  = "RPM ";
+final String LOG_INFO_NAME     = "#INFO";
+final String LOG_DATA_NAME     = "#TIME";
+final String LOG_PLOT_NAME     = "#PLOT";
+final String LOG_LABEL_NAME    = "#LABEL";
+final String LOG_UNITS_NAME    = "#UNITS";
+final String LOG_DIGITS_NAME   = "#DIGITS";
+final String LOG_TYPE_NAME     = "#TYPE";
+final String LOG_ORP_NAME      = "ORP";
+final String LOG_PH_NAME       = "PH";
+final String LOG_SALTPCT_NAME  = "PCT";
+final String LOG_SALTPPM_NAME  = "PPM";
+final String LOG_PUMPGPM_NAME  = "GPM";
+final String LOG_PUMPRPM_NAME  = "RPM";
 final String LOG_PUMPWATT_NAME = "WATT";
-final String LOG_AIRTEMP_NAME  = "AIR ";
+final String LOG_AIRTEMP_NAME  = "AIR";
 final String LOG_POOLTEMP_NAME = "POOL";
+final String LOG_SPATEMP_NAME  = "SPA";
 
 final String LOG_ORP_UNIT      = "mV";
 final String LOG_PH_UNIT       = "";
@@ -175,6 +184,56 @@ final String LOG_PUMPRPM_UNIT  = "RPM";
 final String LOG_PUMPWATT_UNIT = "W";
 final String LOG_AIRTEMP_UNIT  = "F";
 final String LOG_POOLTEMP_UNIT = "F";
+final String LOG_SPATEMP_UNIT  = "F";
+final String LOG_DEVICES_UNIT  = "";
+
+final String LOG_ORP_AXISNR      = "0";
+final String LOG_PH_AXISNR       = "0";
+final String LOG_SALTPPM_AXISNR  = "1";
+final String LOG_SALTPCT_AXISNR  = "1";
+final String LOG_PUMPGPM_AXISNR  = "2";
+final String LOG_PUMPRPM_AXISNR  = "2";
+final String LOG_PUMPWATT_AXISNR = "2";
+final String LOG_AIRTEMP_AXISNR  = "3";
+final String LOG_POOLTEMP_AXISNR = "3";
+final String LOG_SPATEMP_AXISNR  = "3";
+final String LOG_DEVICES_AXISNR  = "4";
+
+final String LOG_ORP_PLOTTYPE      = "spline";
+final String LOG_PH_PLOTTYPE       = "spline";
+final String LOG_SALTPPM_PLOTTYPE  = "spline";
+final String LOG_SALTPCT_PLOTTYPE  = "spline";
+final String LOG_PUMPGPM_PLOTTYPE  = "spline";
+final String LOG_PUMPRPM_PLOTTYPE  = "spline";
+final String LOG_PUMPWATT_PLOTTYPE = "spline";
+final String LOG_AIRTEMP_PLOTTYPE  = "spline";
+final String LOG_POOLTEMP_PLOTTYPE = "spline";
+final String LOG_SPATEMP_PLOTTYPE  = "spline";
+final String LOG_DEVICES_PLOTTYPE  = "line";
+
+final String LOG_ORP_DIGITS      = "1";
+final String LOG_PH_DIGITS       = "2";
+final String LOG_SALTPPM_DIGITS  = "0";
+final String LOG_SALTPCT_DIGITS  = "0";
+final String LOG_PUMPGPM_DIGITS  = "0";
+final String LOG_PUMPRPM_DIGITS  = "0";
+final String LOG_PUMPWATT_DIGITS = "0";
+final String LOG_AIRTEMP_DIGITS  = "1";
+final String LOG_POOLTEMP_DIGITS = "1";
+final String LOG_SPATEMP_DIGITS  = "1";
+final String LOG_DEVICES_DIGITS  = "0";
+
+final String LOG_ORP_AXISLABEL      = "Orp";
+final String LOG_PH_AXISLABEL       = "pH";
+final String LOG_SALTPPM_AXISLABEL  = "Salt";
+final String LOG_SALTPCT_AXISLABEL  = "Salt";
+final String LOG_PUMPGPM_AXISLABEL  = "Flow";
+final String LOG_PUMPRPM_AXISLABEL  = "Speed";
+final String LOG_PUMPWATT_AXISLABEL = "Power";
+final String LOG_AIRTEMP_AXISLABEL  = "Air";
+final String LOG_POOLTEMP_AXISLABEL = "Pool";
+final String LOG_SPATEMP_AXISLABEL  = "Spa";
+final String LOG_DEVICES_AXISLABEL  = "Status";
 
 final String logTxtStringTxtCmdResp[] = {"C", "R"};
 final int ASCIISPACECHAR    = 0x20;
@@ -184,15 +243,31 @@ final int LOG_VAL_SPACES       = 9;
 final String LOG_VALUE_SEPARATOR   = ",";
 final int LOG_VALUE_COLUMWIDTH     = 6;
 final int LOG_VALUE_TIMESTAMPWIDTH = 16;
-
+int LOG_TOGGLE_LIGHT = 0;
+int LOG_TOGGLE_TIMEOUT = 200;
+long nextLOG_TOGGLE_TIME = millis() + LOG_TOGGLE_TIMEOUT;
 
 final int EQUIPMENTDATA = 0;
 final int PUMPDATA      = 1;
 
-final String RAWLOGFILEHEADER = "#RAW LOG FILE WITH TIMESTAMP";
+final String RAWLOGFILEHEADER    = "#RAW LOG FILE WITH TIMESTAMP";
+final String RAWLOGFILEVERSION   = "#VERSION 1";
+final String VALUESLOGFILEHEADER = "#VALUES LOG FILE WITH TIMESTAMP";
+final int RAWLOGFILEISGOOD        = 0;
+final int RAWLOGFILEISEMPTY       = 1;
+final int RAWLOGFILEDOESNOTEXIST  = 2;
+final int RAWLOGFILEWRONGHEADER   = 3;
+final int RAWLOGFILEALREADYEXISTS = 4;
+
+final int READFILEDATA_CREATE       = 0;
+final int READFILEDATA_READ         = 1; 
+final int READFILEDATA_READ_PROCESS = 2;
+final int READFILEDATA_REPLAY_ONCE  = 3; 
+final int READFILEDATA_REPLAY_LOOP  = 4; 
 
 final int CTL_EXPECTED_BUTTSTAT_BYTES = 5;
-final int SPA_EXPECTED_BUTTSTAT_BYTES = 2;
+final int SPA_EXPECTED_BUTTSTAT_BYTES = 5;
+final int SPA_RESPONSE_EXPECTED_BUTTSTAT_BYTES = 2;
 
 
 final int MAXNRPROCESSEDATONCE = 2560;
@@ -204,17 +279,32 @@ final int MAXNREMULATEDEVICEIDS        = 8;
 final int ONETOUCHMSGLENGTH            = 16;
 final int MAXNROFEMULATORCOMMANDSINQUEUE = 1;
 final int MAXNRPUMPCOMMANDDATA = 128;
-final int MAXNRDROPPEDPACKETS       = 512;
+final int MAXNRDROPPEDPACKETS      = 512;
 final int NRUNPROCESSEDDATABUFFERS = 512;
-final int MAXNRLOGGEDTXTSTRINGS = 8096;
-final int MAXTIMEDELTASIZE    = 7;
-final int MAXTXTSTRINGNRSIZE  = 6;
-final int PROCESSEDBYTESMINTIME  = 3000; //Update every X milliseconds
+final int MAXNRLOGGEDTXTSTRINGS   = 8096;
+final int MAXTIMEDELTASIZE        = 7;
+final int MAXTXTSTRINGNRSIZE      = 6;
+final int PROCESSEDBYTESMINTIME   = 3000; //Update every X milliseconds
 final long REFRESHTIMEMICROUPDATE = 10000;
-final int LINEBUSYTIMEOUT                  = 100;
-
+final int LINEBUSYTIMEOUT         = 100;
 
 final int UNKNOWN_COMMAND = 0xFF;
+
+class RAWLogFileReader {
+  String fileName;
+  String filePath;
+  BufferedReader handle;
+  int hasTimeStamp;
+  long timeStamp;
+  String headerReadLine;
+  String dataReadLine;
+  int dataPosition;
+  int needsUpdate;
+  int errorCode;
+  int dataLength;
+  int nrBytes;
+  int Incr;
+}
 
 class displayOptions {
   boolean value;
@@ -227,6 +317,7 @@ class displayOptions {
   }
 }
 
+RAWLogFileReader RAWLogFileRead = new RAWLogFileReader();
 ArrayList<displayOptions> displayOptionsList = new ArrayList<displayOptions>();
 
 //=========//
@@ -239,14 +330,9 @@ boolean addSpaceBetweenDevicesOptionSelected;
 int     debug                        = 0;  // Control debugging info
 int verboseDataDebugLevel = 0;
 
-int rawLogFileIncr;
-int rawLogFileDataLength;
-int rawLogFileNrBytes;
 String[] rawLogFileData;
 long rawLogFileTimestampDelta ;
 int rawLogFileDataVal;
-int rawLogFileDataPosition ;
-boolean stillProcessingRAWLogFile ;
 boolean waitingForReplayDelay ;
 long replayDelayEndTime ;
 long replayTime0;
@@ -264,20 +350,24 @@ int rawIncomingDataNeedsNewline ;
 //===============================//
 String logFilesPath           = "../logFiles/"; // Base directory where logfiles are stored
 PrintWriter    logFileHandle;
-PrintWriter    rawLogFileHandle;
+PrintWriter    RAWLogFileWriterHandle;
 PrintWriter    valuesLogFileHandle;
-BufferedReader logFileReader;
-long           rawLogFileValuesWritten = 0;
-long           rawLogFileValuesWrittenMax = 16384;
+long           RAWLogFileValuesWritten = 0;
+long           RAWLogFileValuesWrittenMax = 16384*256;
 boolean        newLogFilesNeeded = false;
-long           rawLogFileStartTimestamp;
-    //SimpleDateFormat rawLogFileDateFormat = new SimpleDateFormat("MM-dd-yyyy_HH:mm:ss");
-    //SimpleDateFormat rawLogFileDateFormatLong = new SimpleDateFormat("MM-dd-yyyy_HH:mm:ss.SSS");
-    SimpleDateFormat rawLogFileDateFormat = new SimpleDateFormat("MM-dd-yyyy_HH:mm:ss.SSS");
-    SimpleDateFormat rawLogFileDateFormatShort = new SimpleDateFormat("MM-dd-yyyy_HH:mm:ss");
+long           logFileStartTimestamp;
+//SimpleDateFormat OLDrawLogFileDateFormat      = new SimpleDateFormat("MM-dd-yyyy_HH:mm:ss.SSS");
+//SimpleDateFormat OLDrawLogFileDateFormatShort = new SimpleDateFormat("MM-dd-yyyy_HH:mm:ss");
+SimpleDateFormat OLDrawLogFileDateFormat      = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss-SSS");
+SimpleDateFormat OLDrawLogFileDateFormatShort = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
+SimpleDateFormat rawLogFileDateFormat         = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss-SSS");
+SimpleDateFormat rawLogFileDateFormatShort    = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
+SimpleDateFormat rawLogFileDateFormatYear     = new SimpleDateFormat("yyyy");
+SimpleDateFormat rawLogFileDateFormatNoYear   = new SimpleDateFormat("MM-dd_HH-mm-ss-SSS");
+
 Date noDateFound = new Date();
 
-  
+
 //======================================//
 // Set up COM port for RS485 connection //
 //======================================//
@@ -313,14 +403,11 @@ ArrayList<String> rawLogFileReadNameBaseList = new ArrayList();
 int rawLogFileReadNameBaseNr            = -1;
 int rawLogFileReadNameBaseNrOfFiles     = -1;
 String useLogFileNameBase               = "";
-int rawLogFileHasBeenRead ;
 String logFileNameBase;
-int rawLogFileHasTimestamp ;
 long lastLogTimeStampMicroTime     ;
 long currentByteTimeStampMicroTime ;
 long initByteTimeStampMicroTime    ;
 long logTimeStampMicroDelta;
-String rawLogFileReadLine = "";
 int destinationID             ;
 String lastDestinationName   ;
 
@@ -336,18 +423,25 @@ String LOG_PUMPGPM_VAL  = "NA";
 String LOG_PUMPRPM_VAL  = "NA";
 String LOG_PUMPWATT_VAL = "NA";
 String LOG_AIRTEMP_VAL  = "NA";
+String LOG_SPATEMP_VAL  = "NA";
 String LOG_POOLTEMP_VAL = "NA";
+int[] LOG_DEVICES_LIST;
 boolean LOG_SALT_ENABLED       = false;
 boolean LOG_PUMP_ENABLED       = false;
 boolean LOG_TEMP_ENABLED       = false;
 int reportValuesInLogfile ;
 String lastValuesLogString ;
+String lastValuesLogTime ;
+int lastValuesLogSkipped;
 String reportValuesInLogfileList ;
 String logValueGroupsEnabled = "";
 
 String WATERTEMP ="" ;
 String BOXTEMP = "";
 
+String CTLDEVICESLIST = "";
+String[] CTLDEVICESLISTSPLIT;
+int MAXREADOUTLINESIZE = 33;
 //===========//
 // GUI SETUP //
 //===========//
@@ -437,7 +531,6 @@ int pumpSTARTVal       ;
 int checkSumIn;
 String checkSumErrorString;
 int checkSumError;
-int logRawData                           = 1;
 int droppedCtr                           = 0;
 int[] droppedPackets                     = new int[MAXNRDROPPEDPACKETS];
 long previouslastReceivedByteTimeMicro   = 0;
@@ -479,7 +572,7 @@ boolean foundExtendedChemlinkData = false;
 void initDisplayOptions() {
   displayOptionsList.add( new displayOptions(false, "showUnprocessedData", "Show Unprocessed Data"   ) ); // Show the incoming hex bytes before they are processed
   displayOptionsList.add( new displayOptions(false, "showRawIncomingHexData", "Show Raw Incoming Hex Data" ) ); // Show incoming data (in HEX) as it is being read
-  displayOptionsList.add( new displayOptions(false, "showVerboseDataInLog", "Show Verbose Data in Log file" ) ); // Show verbose comments in the log file
+  displayOptionsList.add( new displayOptions(false, "showVerboseDataInLog", "Show Verbose Data in logFile" ) ); // Show verbose comments in the log file
   displayOptionsList.add( new displayOptions(false, "suppressChecksumErrors", "Suppress Checksum Errors"   ) ); // Don't complain about Checksum errors
   displayOptionsList.add( new displayOptions(true, "showDroppedData", "Show Dropped Data"   ) ); // Show the dropped data (due to checksum errors, colissions,...)
   displayOptionsList.add( new displayOptions(false, "dontShowZeroACKData", "Don't Show Zero ACK Data" ) ); // Don't show the data values following an ACK if they're all 0
@@ -501,4 +594,108 @@ void initDisplayOptions() {
   displayOptionsList.add( new displayOptions(true, "printReplayStatistics", "Show Replay Statistics"  ) ); //
   displayOptionsList.add( new displayOptions(true, "onlyReportNewValuesinLog", "Only log new values to _VALUES file"  ) ); //
   displayOptionsList.add( new displayOptions(true, "useRefreshTime", "Process Bytes for refreshTime us"  ) ); //
+  displayOptionsList.add( new displayOptions(true, "showMemoryStatistics", "Display Memory Statistics"  ) ); //
 }
+
+
+// From processFiles
+
+
+String[][] outPutConfig = {
+  {"1H", "1 hour", "10s", "1s"}, 
+  {"3H", "3 hours", "1m"}, 
+  {"1D", "1 day", "5m", "1m", "10s"}, 
+  {"2D", "2 days"        }, 
+  {"1WK", "1 week", "5m", "15m"}, 
+  {"1M", "1 month", "1m"}, 
+  {"3M", "3 months"      }, 
+  {"1Y", "1 year", "1d", "1h", "5m"}
+};
+
+boolean beVerbose = false;
+boolean copyFileWritesToConsole = false;
+int processMaxNrFiles = 0; // Limit the number of files to process (0 = no limit)
+boolean useEpochTimeForSplitLogFileName = true;
+
+//=====================================================
+String valuesHeader;
+BufferedReader ValuesLogFileReader;
+BufferedReader fullValuesLogFileReader;
+PrintWriter smallValuesLogFileWriter;
+PrintWriter splitValuesLogFileHandle;
+
+String startsWithValuesLogFileNames = "Jandy_";
+//String startsWithValuesLogFileNames = "test";
+//String startsWithValuesLogFileNames = "Jandy_log_2016-04-14_17-15-23-000_Values.txt";
+String endsWithValuesLogFileNames = "_Values.txt";
+//String endsWithValuesLogFileNames = "Jandy_log_2016-03-04_23-46-19-607_Values.txt";
+String startsWithRawLogFileNames = "Jandy_";
+String endsWithRawLogFileNames = "_RAW.txt";
+
+
+TimeZone tzLocal = TimeZone.getTimeZone("America/Chicago");
+TimeZone tzGMT   = TimeZone.getTimeZone("UTC");
+
+
+String ValuesLogFileHeaderLine = "";
+int foundValuesLogHeaderFile = 0;
+//String fullValuesFileName = logFilesPath+"fullValues.txt";
+String splitValuesFileRootName = "fullValuesSmpl_";
+//File logFilesDir = new File(logFilesPath);
+//String[] logFileNames = logFilesDir.list();
+//int FNlength = logFileNames.length;
+//String[] valuesLogFileNames = new String[FNlength];
+//String[] valuesLogFileNames = new String[3];
+String[] valuesLogFileNames = null;
+String[] rawLogFileNames = null;
+String[] logFileHeaders = new String[20];
+String lastValuesLogFileNameLine;
+boolean lastValuesLogFileNameLineAdded = true;
+int maxLogFileHeadersNr = 0;
+int valueFileNr = 0;
+int maxValuesLogFileNr = 0;
+int maxRawLogFileNr = 0;
+long lastLogFileEndTimeStampUS = 0;
+long deltaTimeStampSinceLastFullDataPtUS;
+final long maxdeltaTimeStampUS = 25*1000000; // 25s as max time between valid points
+long tmpTimestampUS = 0;
+String commentChar = "#"; //#
+long fullLogFileStartTimestampMS;
+final int maxNrDataPts   = 24;
+long YEARLENGTH = 31622400000L;
+long DAYLENGTH  = 86400000L;
+float sumDatavalues[] = new float[maxNrDataPts];
+String oldSumDatavaluesString[] = new String[maxNrDataPts];
+float newDatavalues[] = new float[maxNrDataPts];
+long sumTimes[]       = new long[maxNrDataPts];
+long tmpSumTimes[]    = new long[maxNrDataPts];
+long maxSumTimesUS;
+int nrDigits[]        = new int[maxNrDataPts];
+int nrSumPts;
+int outPts[];
+int outTimes[];
+int totDataseries;
+long relativeTimeNowUSPrev = -1;
+long relativeTimeNowUS     = -1;
+long nextSplitLogFileStartMS = 0;
+String processedLogFilesCreatedDate;
+boolean splitValuesLogFileHandleHasBeenOpened = false;
+String reducedValuesFileID;
+long splitLogFileLengthMS;
+long DONTADDLOGTIMESTAMP = -1;
+long fullTimeStampUS  = 0;
+long fullTimeStampMS  = 0;
+
+long previousFullTimeStampUS    = 0;
+long previousSumTimeStampUS     = 0;
+long logFileDataLineTimeStampUS = 0;
+long newSplitFileTimeStampMS    = 0;
+
+long currentLogFileStartTimestampMS;
+long currentLogFileStartTimeStampUS;
+
+String formatTimeStampUSString = "";
+
+boolean dontIncludeThisTimestamp = false;
+long lastFoundTimeStampMS   = 0;
+long alignTimeStampOffsetMS = 0;

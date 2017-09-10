@@ -6,7 +6,7 @@ final int CMD_LX_HTR_PING   = 0x0C;
 // LX_HTR responses to Master
 final int RESP_LX_HTR_PONG  = 0x0D;
 
-int processLX_HTRCommand (int command, int destination) {
+int processLX_HTRCommand(int command, int destination) {
   doNothing(destination);
   switch(command) {
     case(CMD_LX_HTR_PROBE):

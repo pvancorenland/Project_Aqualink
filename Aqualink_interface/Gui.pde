@@ -21,8 +21,8 @@ void initGUI() {
     DisplayOptionsCanvasXSize = 500 * showDisplayOptions;
     DisplayOptionsCanvasYSize = (yPosToggle + (displayOptionsList.size ())*(toggleButtonYSize+toggleButtonYOffset)) * showDisplayOptions;
     // Info Screen
-    infoCanvasXSize = 480 * showInfoTextCanvas;
-    infoCanvasYSize = 200 * showInfoTextCanvas;
+    infoCanvasXSize   = 480 * showInfoTextCanvas;
+    infoCanvasYSize   = 50 * showInfoTextCanvas;
     ValuesCanvasXsize = 480 * showValuesCanvas;
     ValuesCanvasYsize = 320 * showValuesCanvas;
 
@@ -41,8 +41,9 @@ void initGUI() {
     // Set up canvas
     surface.setSize(canvasXSize, canvasYSize);
     background(0);
-
-    // Add Display Options
+    //=====================//
+    // Add Display Options //
+    //=====================//
     if ( showDisplayOptions == 1 ) {
       enabledCanvasOptions += " DISPLAY OPTIONS";
       rect(currentXPos, currentYPos, DisplayOptionsCanvasXSize, DisplayOptionsCanvasYSize);
@@ -50,22 +51,40 @@ void initGUI() {
       currentYPos = 0 ;
       createToggles();
     }
-
-    // Output text
-    if ( showInfoTextCanvas == 1 ) {
-      enabledCanvasOptions += " INFOTEXT";
-      infoTextArea = guiWin.addTextarea("infoTxt")
+    //================//
+    // Readout Values //
+    //================//
+    if ( showValuesCanvas == 1 ) {
+      enabledCanvasOptions += " VALUES";
+      valuesTextArea = guiWin.addTextarea("readoutValues")
         .setPosition(currentXPos, currentYPos)
-        .setSize(infoCanvasXSize, infoCanvasYSize)
-        .setFont(createFont("arial", 24))
-        .setLineHeight(14)
+        .setSize(ValuesCanvasXsize, ValuesCanvasYsize)
+        .setFont(createFont("Courier", 24))
+        .setLineHeight(26)
         .setColor(0xffffffff)
         .setColorBackground(color(0, 0))
         .setColorForeground(color(255, 100));
-      currentYPos += infoCanvasYSize;
+      currentYPos += ValuesCanvasYsize;
+      // Set up some text variables
+      if ( includeValueinLogFile(LOG_SALTPPM_INCLUDE) || includeValueinLogFile(LOG_SALTPCT_INCLUDE) ) {
+        logValueGroupsEnabled += "SALT ";
+        LOG_SALT_ENABLED = true;
+      }
+      if ( includeValueinLogFile(LOG_PUMPGPM_INCLUDE) || includeValueinLogFile(LOG_PUMPRPM_INCLUDE) || includeValueinLogFile(LOG_PUMPWATT_INCLUDE) ) {
+        LOG_PUMP_ENABLED = true;
+        logValueGroupsEnabled += "PUMP ";
+      }
+      if ( includeValueinLogFile(LOG_AIRTEMP_INCLUDE) || includeValueinLogFile(LOG_POOLTEMP_INCLUDE) ) {
+        LOG_TEMP_ENABLED = true;
+        logValueGroupsEnabled += "TEMP ";
+      }
+      if ( includeValueinLogFile(LOG_DEVICES_LIST_INCLUDE) ) {
+        logValueGroupsEnabled += "DEVICE_LIST ";
+      }
     }
-
-    // PLAY Button text
+    //==================//
+    // PLAY Button text //
+    //==================//
     if ( showPlayButton == 1 ) {
       enabledCanvasOptions += " PLAYBUTTON";
       if ( areWeReadingRawLogFile() ) {
@@ -91,32 +110,25 @@ void initGUI() {
         currentYPos += playButtonYSize;
       }
     }
-    // Readout Values
-    if ( showValuesCanvas == 1 ) {
-      enabledCanvasOptions += " VALUES";
-      valuesTextArea = guiWin.addTextarea("readoutValues")
+    //=============//
+    // Output text //
+    //=============//
+    if ( showInfoTextCanvas == 1 ) {
+      enabledCanvasOptions += " INFOTEXT";
+      infoTextArea = guiWin.addTextarea("infoTxt")
         .setPosition(currentXPos, currentYPos)
-        .setSize(ValuesCanvasXsize, ValuesCanvasYsize)
-        .setFont(createFont("Courier", 24))
-        .setLineHeight(26)
+        .setSize(infoCanvasXSize, infoCanvasYSize)
+        .setFont(createFont("arial", 24))
+        .setLineHeight(14)
         .setColor(0xffffffff)
         .setColorBackground(color(0, 0))
         .setColorForeground(color(255, 100));
-      currentYPos += ValuesCanvasYsize;
-      // Set up some text variables
-      if ( includeValueinLogFile(LOG_SALTPPM_INCLUDE) || includeValueinLogFile(LOG_SALTPCT_INCLUDE) ) {
-        logValueGroupsEnabled += "SALT ";
-        LOG_SALT_ENABLED = true;
-      }
-      if ( includeValueinLogFile(LOG_PUMPGPM_INCLUDE) || includeValueinLogFile(LOG_PUMPRPM_INCLUDE) || includeValueinLogFile(LOG_PUMPWATT_INCLUDE) ) {
-        LOG_PUMP_ENABLED = true;
-        logValueGroupsEnabled += "PUMP ";
-      }
-      if ( includeValueinLogFile(LOG_AIRTEMP_INCLUDE) || includeValueinLogFile(LOG_POOLTEMP_INCLUDE) ) {
-        LOG_TEMP_ENABLED = true;
-        logValueGroupsEnabled += "TEMP ";
-      }
+      currentYPos += infoCanvasYSize;
     }
+
+
+
+
     //println("GRPS: "+logValueGroupsEnabled);
     if ( areWeEmulatingPowerCenter() ) {
       frameRate(10000); // Go Fast!

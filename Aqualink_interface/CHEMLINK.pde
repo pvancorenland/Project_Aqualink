@@ -1,6 +1,8 @@
 //======================//
 //=== CHEMLINK COMMS ===//
 //======================//
+//Jandy_log_05-30-2015_13:40:57.000_Output.txt:                     13084 WARNING!:Unknown CHEMLINK (H84) Response: H01 to command: H09
+
 
 // CHEMLINK Commands
 final int CMD_CHEMLINK_GETPH    = 0x01;
@@ -16,6 +18,8 @@ final int CMD_CHEMLINK_GETORP   = 0x20; // Ident?
 
 final String CMD_CHEMLINK_SETORP_TXT = "SET ORP";
 final String CMD_CHEMLINK_SETPH_TXT  = "SET PH";
+final String CMD_CHEMLINK_ORPFEED_TXT = "FEED ORP";
+final String CMD_CHEMLINK_PHFEED_TXT  = "FEED PH";
 
 // CHEMLINK responses to Master
 final int RESP_CHEMLINK_0x21    = 0x21;
@@ -25,7 +29,7 @@ final int RESP_CHEMLINK_0x22    = 0x22;
 final int targetORP = 51;
 final int targetPH  = 73; 
 
-int processCHEMLINKCommand (int command, int destination) {
+int processCHEMLINKCommand(int command, int destination) {
   int validCommand = processCHEMLINKCommandIsValid(command);
   if ( validCommand == 1 ) {
     emulateCHEMLINK(command, destination);
@@ -33,7 +37,7 @@ int processCHEMLINKCommand (int command, int destination) {
   return validCommand;
 }
 
-int processCHEMLINKCommandIsValid (int command) {
+int processCHEMLINKCommandIsValid(int command) {
   switch(command) {
     // STANDARD COMMANDS
     case(CMD_PROBE):
@@ -94,19 +98,31 @@ int processCHEMLINKResponse(int deviceID, int command, int response, int startNr
     processCHEMLINK_GETORP_response(deviceID, command, startNr, endNr);
     return 1;
     case(CMD_CHEMLINK_SETORP) :
-    processValidGenericACKResponse(CMD_CHEMLINK_SETORP_TXT, CMD_CHEMLINK_SETORP, startNr, endNr);
+    processValidGenericACK_Response(CMD_CHEMLINK_SETORP_TXT, CMD_CHEMLINK_SETORP, startNr, endNr);
     return 1;
     case(CMD_CHEMLINK_GETPH) :
     processCHEMLINK_GETPH_response(deviceID, command, startNr, endNr);
     return 1;
+    case(CMD_CHEMLINK_SETPH) :
+    processValidGenericACK_Response(CMD_CHEMLINK_SETPH_TXT, CMD_CHEMLINK_SETORP, startNr, endNr);
+    return 1;
     case(CMD_STATUS) :
     processCHEMLINK_STATUS_response(deviceID, command, startNr, endNr);
+    return 1;
+  case CMD_CHEMLINK_ORPFEED:
+    processValidGenericACK_Response(CMD_CHEMLINK_ORPFEED_TXT, CMD_CHEMLINK_ORPFEED, startNr, endNr);
+    return 1;
+  case CMD_CHEMLINK_PHFEED:
+    processValidGenericACK_Response(CMD_CHEMLINK_PHFEED_TXT, CMD_CHEMLINK_PHFEED, startNr, endNr);
     return 1;
   case CMD_CHEMLINK_0x09:
     processCHEMLINK_0x09_response(deviceID, command, startNr, endNr);
     return 1;
+  case CMD_CHEMLINK_0x0A:
+    processValidGenericACK_Response(CMD_CHEMLINK_0x0A, startNr, endNr);
+    return 1;
   case CMD_CHEMLINK_0x18:
-    processValidGenericACKResponse(command, startNr, endNr);
+    processValidGenericACK_Response(command, startNr, endNr);
     return 1;
   default:
     unknownResponse( deviceID, command, response, startNr, endNr);
@@ -115,9 +131,7 @@ int processCHEMLINKResponse(int deviceID, int command, int response, int startNr
   }
 }
 
-
-
-String checkCHEMLINKStatus ( int startPos, int endPos ) {
+String checkCHEMLINKStatus( int startPos, int endPos ) {
   doNothing(endPos);
   String returnVal = "";
   for (int i=startPos; i<endPos; i++ ) {
@@ -126,7 +140,7 @@ String checkCHEMLINKStatus ( int startPos, int endPos ) {
   return returnVal;
 }
 
-String checkCHEMLINKORPSetup ( int startPos, int endPos ) {
+String checkCHEMLINKORPSetup( int startPos, int endPos ) {
   doNothing(endPos);
   /* Bytes 0 - 10
    Byte #   | Value
@@ -439,7 +453,7 @@ void emulateCHEMLINK(int command, int destination) {
     //println("EMU!! "+reportVal(command, 2));
     switch(command) {
       case(CMD_PROBE):
-      respondCHEMLINK_PROBE(destination);
+      send_ACK("CHEMLINK", 2, command);
       break;
       case(CMD_STATUS):
       respondCHEMLINKSTATUS();
@@ -475,11 +489,6 @@ void emulateCHEMLINK(int command, int destination) {
       logTxtLn("UNKNOWN EMU COMMAND!! "+reportVal(command, 2)+" DEST: "+reportVal(destination, 2), LOGTXT_WARNING);
     }
   }
-}
-
-void respondCHEMLINK_PROBE(int destination) {
-  doNothing(destination);
-  send_ACK("CHEMLINK", 2);
 }
 
 void respondCHEMLINKSTATUS() {

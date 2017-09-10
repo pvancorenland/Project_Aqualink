@@ -1,7 +1,6 @@
 //TODO:
 //  315 /       0 /    448 / ____ | H00 H10 H02 H41 H10 H00 <ESCAPE H00 H0D H0F H02 H81 H10 H03 
 //                                     \==> 1TOUCH         (H41) ARGS:04   Received command 0xH10 for destination 1TOUCH DATA: H00 H0D H0F H02  == "H00/H0D/H0F/H02/"
-
 // After turning the heater on
 // 9769 /     119 /   2116 /     24 | ==> 1TOUCH         (H41) ARGS:05   STATUS       DATA: H00 H00 H00 H10 H01  == "H00/H00/H00/H10/H01/"
 //              0                     ==> MASTER               ARGS:02   ACK          DATA: H00 H00  == "H00/H00/"
@@ -26,7 +25,7 @@ final int CMD_ONETOUCH_CLEAR          = 0x09;
 final int CMD_ONETOUCH_SHIFTLINES     = 0x0F;
 final int CMD_ONETOUCH_HIGHLIGHTCHARS = 0x10;
 
-int processONETOUCHCommand (int command, int destination) {
+int processONETOUCHCommand(int command, int destination) {
   int validCommand = processONETOUCHCommandIsValid(command);
   if ( validCommand == 1 ) {
     emulateONETOUCH(command, destination);
@@ -34,7 +33,7 @@ int processONETOUCHCommand (int command, int destination) {
   return validCommand;
 }
 
-int processONETOUCHCommandIsValid (int command) {
+int processONETOUCHCommandIsValid(int command) {
   switch(command) {
     case(CMD_ONETOUCH_PROBE):
     logTxtProbe();
@@ -74,7 +73,7 @@ int processONETOUCHCommandIsValid (int command) {
   }
 }
 
-String checkONETOUCHDisplayStatus ( int startPos, int endPos) {
+String checkONETOUCHDisplayStatus( int startPos, int endPos) {
   doNothing(endPos);
   String returnVal = "";
   int highLightLineNr = processDataValues[startPos];
@@ -99,7 +98,7 @@ int processONETOUCHResponse(int deviceID, int command, int response, int startNr
     if ( response == CMD_ACK) {
       return processONETOUCH_0x05_response(deviceID, startNr, endNr);
     } else {
-    unknownResponse( deviceID, command, response, startNr, endNr);
+      unknownResponse( deviceID, command, response, startNr, endNr);
       return 0;
     }
     case (CMD_ONETOUCH_MSG_LONG):
@@ -113,7 +112,7 @@ int processONETOUCHResponse(int deviceID, int command, int response, int startNr
       }
       return 1;
     } else {
-    unknownResponse( deviceID, command, response, startNr, endNr);
+      unknownResponse( deviceID, command, response, startNr, endNr);
       return 0;
     }
     case (CMD_ONETOUCH_HIGHLIGHT):
@@ -121,7 +120,16 @@ int processONETOUCHResponse(int deviceID, int command, int response, int startNr
       setEmulatorRunStage(deviceID, 4);
       return 1;
     } else {
-    unknownResponse( deviceID, command, response, startNr, endNr);
+      unknownResponse( deviceID, command, response, startNr, endNr);
+      return 0;
+    }
+    case (CMD_ONETOUCH_HIGHLIGHTCHARS):
+    if ( response == CMD_ACK) {
+      //??????????????????? NEEDED?
+      setEmulatorRunStage(deviceID, 4);
+      return 1;
+    } else {
+      unknownResponse( deviceID, command, response, startNr, endNr);
       return 0;
     }
     case (CMD_ONETOUCH_STATUS):
@@ -147,7 +155,7 @@ int processONETOUCHResponse(int deviceID, int command, int response, int startNr
     processPROBEResponse(lastDestination);
     return 1;
   default:
-      unknownResponse( deviceID, command, response, startNr, endNr);
+    unknownResponse( deviceID, command, response, startNr, endNr);
     return 0;
   }
 }

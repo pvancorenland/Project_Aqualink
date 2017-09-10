@@ -5,6 +5,13 @@
 final int CMD_SPA_STATUS    = CMD_STATUS;   //0x02
 final int CMD_SPA_MSG       = CMD_MSG;      //0x03
 final int CMD_SPA_MSG_LONG  = CMD_MSG_LONG; //0x04
+final int CMD_SPA_0x50      = 0x50; //
+final int CMD_SPA_0x51      = 0x51; //
+final int CMD_SPA_0x52      = 0x52; //
+final int CMD_SPA_0x53      = 0x53; //
+final int CMD_SPA_0x59      = 0x59; //
+final int CMD_SPA_0x60      = 0x60; //
+final int CMD_SPA_0x61      = 0x61; //
 
 
 // SPA BUTTON LIGHT STATUS
@@ -22,7 +29,7 @@ final int SPA_STAT_BUT3[] = {
 };
 
 
-int processSPACommand (int command, int destination) {
+int processSPACommand(int command, int destination) {
   doNothing(destination);
   switch(command) {
     case(CMD_PROBE):
@@ -30,7 +37,7 @@ int processSPACommand (int command, int destination) {
     return 1;
     case(CMD_STATUS) :
     logTxt("STATUS ", LOGTXT_TYPE);
-    logTxt(checkCTLButtonStatus(2, processDataValuesCtr), LOGTXT_DATA);
+    logTxt(checkSPAButtonStatus(2, processDataValuesCtr), LOGTXT_DATA);
     return 1;
     case(CMD_SPA_MSG) :
     logTxt("MESSAGE", LOGTXT_TYPE);
@@ -48,18 +55,39 @@ int processSPACommand (int command, int destination) {
 }
 
 int processSPAResponse(int deviceID, int command, int response, int startNr, int endNr) {
-    doNothing(deviceID);
+  doNothing(deviceID);
   //String initString = "";
   switch(command) {
     case(CMD_PROBE):
     processPROBEResponse(lastDestination);
     return 1;
     case (CMD_SPA_STATUS):
-    checkSPAButtonStatus(startNr, endNr);
+    checkSPAButtonResponse(startNr, endNr);
     return 1;
     case(CMD_SPA_MSG):
     logTxt("MSG", LOGTXT_TYPE);
     logTxtData(2, processDataValuesCtr);
+    return 1;
+    case(CMD_SPA_0x50):
+    processValidGenericACK_Response(CMD_SPA_0x50, startNr, endNr);
+    return 1;
+    case(CMD_SPA_0x51):
+    processValidGenericACK_Response(CMD_SPA_0x51, startNr, endNr);
+    return 1;
+    case(CMD_SPA_0x52):
+    processValidGenericACK_Response(CMD_SPA_0x52, startNr, endNr);
+    return 1;
+    case(CMD_SPA_0x53):
+    processValidGenericACK_Response(CMD_SPA_0x53, startNr, endNr);
+    return 1;
+    case(CMD_SPA_0x59):
+    processValidGenericACK_Response(CMD_SPA_0x59, startNr, endNr);
+    return 1;
+    case(CMD_SPA_0x60):
+    processValidGenericACK_Response(CMD_SPA_0x60, startNr, endNr);
+    return 1;
+    case(CMD_SPA_0x61):
+    processValidGenericACK_Response(CMD_SPA_0x61, startNr, endNr);
     return 1;
   default:
     unknownResponse( deviceID, command, response, startNr, endNr);
@@ -67,7 +95,18 @@ int processSPAResponse(int deviceID, int command, int response, int startNr, int
   }
 }
 
-String checkSPAButtonStatus (int startPos, int endPos) {
+String checkSPAButtonResponse(int startPos, int endPos) {
+  String returnVal = "";
+  if ( buttStat(SPA_RESPONSE_EXPECTED_BUTTSTAT_BYTES, SPA_STAT_BUT1, startPos, endPos) == 1) {
+    returnVal += "SPA " ;
+  }
+  if ( returnVal == "" ) {
+    return "NIL";
+  } 
+  return returnVal;
+}
+
+String checkSPAButtonStatus(int startPos, int endPos) {
   String returnVal = "";
   if ( buttStat(SPA_EXPECTED_BUTTSTAT_BYTES, SPA_STAT_BUT1, startPos, endPos) == 1) {
     returnVal += "SPA " ;

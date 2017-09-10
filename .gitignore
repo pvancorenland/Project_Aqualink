@@ -9,3 +9,11 @@ OLD_STUFF/aquarite_emulator
 RS485Logger
 OLD_STUFF/command_center_emulator
 test_Serial_response_time
+*.csv
+*.htm
+Aqualink_interface/application.linux-armv6hf
+Aqualink_interface/application.linux32
+Aqualink_interface/application.linux64
+node_modules/highcharts
+*.txt
+Aqualink_chart

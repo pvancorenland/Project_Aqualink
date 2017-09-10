@@ -44,12 +44,12 @@ import controlP5.*;
 import processing.serial.*;
 import java.util.Date;
 import java.text.SimpleDateFormat;
+import java.util.TimeZone;
 
 //============================================================================//
 //============================================================================//
 //============================================================================//
 //============================================================================//
-
 
 void setup() {
   //println(sketch);
@@ -63,11 +63,15 @@ void setup() {
   // Read Setup Values //
   //===================//
   readSetupValues();
+  //============================//
+  // Processed passed arguments //
+  //============================//
+  processPassedArguments();
   //=====//
   // GUI //
   //=====//
   initGUI();
-  if ( readFileData == 0 ) {
+  if ( !areWeReadingRawLogFile() ) {
     //=========//
     // Cleanup //
     //=========//  
@@ -83,33 +87,79 @@ void setup() {
       //======================//
     }
   }
+
+  // FROM PROCESSVALUESFILES
+  createLogFilesList();
 }
 
+void draw324345() {
+  //=================================
+  // createReducedLogFiles
+  String fileLength   = "";
+  String fileInterval = "";
+  for ( int i=0; i< outPutConfig.length; i++ ) {
+    String[] dataLine = outPutConfig[i];
+    fileLength = dataLine[0];
+    println("Creating files with length "+fileLength+" = "+dataLine[1]);
+    for ( int j=2; j< dataLine.length; j++ ) {
+      fileInterval = dataLine[j];
+      println("  Using interval "+fileInterval);
+      //createReducedLogFiles(fileLength, fileInterval, false);
+    }
+    println("");
+  }
+
+  //=================================
+  // splitRAWLogFile
+  for ( int i = 0; i< maxRawLogFileNr; i++ ) {
+//    if ( showDebug(DEBUG_DETAILS) == 1 ) {
+      println("##########################################");
+      println("Splitting FILE: "+logFilesPath+rawLogFileNames[i]);
+      println("    =====>");
+//    }
+    delay(1);
+    //splitRAWLogFile(logFilesPath+rawLogFileNames[i]);
+  }
+  println(" =====> DONE!");
+  exit();
+}
+
+
+
+void draw67869() {
+  //splitRAWLogFile("/Users/pjvancor/Dropbox (Personal)/My documents/Processing/Project_Aqualink/logFiles/Jandy_log_03-26-2016_21:03:33_RAW.txt");
+  //splitRAWLogFile("/Users/pjvancor/Dropbox (Personal)/My documents/Processing/Project_Aqualink/logFiles/Jandy_log_04-10-2016_10:34:19.075_RAW.txt");
+  //splitRAWLogFile("/Users/pjvancor/Dropbox (Personal)/My documents/Processing/Project_Aqualink/logFiles/Jandy_log_02-22-2016_12:02:12.000_RAW.txt");
+  //splitRAWLogFile("/Users/pjvancor/Dropbox (Personal)/My documents/Processing/Project_Aqualink/logFiles/Jandy_log_04-17-2016_08:30:01.362_RAW.txt");
+}  
+
+
+
 void draw() {
-  if ( readFileData == 0 ) {
+  if ( !areWeReadingRawLogFile() ) {
     //=========================//
     // Read from RS485 Adapter //
     //=========================//  
     //==================================//
     // Emulate Power Center and Devices //
     //==================================//
-    powerCenterEmulateNext(areWeEmulatingPowerCenter()) ;
+    powerCenterEmulateNext(areWeEmulatingPowerCenter()); 
     // Process the emulator data first, both from Power Center and Individual Devices
-    emulateAllAvailableData();
+    emulateAllAvailableData(); 
     processAllIncomingData();
   } else {
     //================================//
     // Read from RAW Log File Adapter //
     //================================//  
     switch (drawMode) {
-    case DRAW_INIT_FILES:
+    case DRAW_INIT_FILES : 
       {
         // Turn off the spaces between lines //
-        setDisplayOption("addSpaceBetweenDevices", false);
+        setDisplayOption("addSpaceBetweenDevices", false); 
         //=========//
         // Cleanup //
         //=========//  
-        initValues();
+        initValues(); 
         //======//
         // LOGS //
         //======//
@@ -117,11 +167,11 @@ void draw() {
           //==============//
           // Serial Ports //
           //==============//
-          initSerialPort();
+          initSerialPort(); 
           //======================//
           // Process RAW Log File //
           //======================//
-          readAndStartReplayOfRAWLogFile();
+          readAndStartReplayOfRAWLogFile(); 
           // Restore setting for spaces between devices //
           setDisplayOption("addSpaceBetweenDevices", addSpaceBetweenDevicesOptionSelected); // Restore this option
           setDrawMode(DRAW_RUN);
@@ -129,35 +179,25 @@ void draw() {
           gotoNextRawLogFile();
         }
       }
-      break;
-    case DRAW_RUN:
+      break; 
+    case DRAW_RUN : 
       {
         //============================================================//
         // Process/Replay from log file for REFRESHTIMEMICROUPDATE us //
         //============================================================// 
         processRAWLogFileUntilRefreshTimeMicroUpdate();
       }
-      break;
-    case DRAW_FINISH_FILES :
-      reportAndDropUnprocessedData(0);
-      closeLogFiles();
+      break; 
+    case DRAW_FINISH_FILES : 
+      reportAndDropUnprocessedData(0); 
+      closeLogFiles(); 
       gotoNextRawLogFile();
     }
   }
-  showMemory();
-  flushLogFiles();
+  showMemory(); 
+  flushLogFiles(); 
   runDrawDebugStuff();
 }
-
-
-
-
-
-
-
-
-
-
 
 //==========================================================
 //==========================================================
@@ -176,13 +216,13 @@ void draw2() {
 }
 
 void drawPROBE() {
-  currentOpenPort.write(0x10);
-  currentOpenPort.write(0x02);
-  currentOpenPort.write(0x80);
-  currentOpenPort.write(0x00);
-  currentOpenPort.write(0x92);
-  currentOpenPort.write(0x10);
-  currentOpenPort.write(0x03);
+  currentOpenPort.write(0x10); 
+  currentOpenPort.write(0x02); 
+  currentOpenPort.write(0x80); 
+  currentOpenPort.write(0x00); 
+  currentOpenPort.write(0x92); 
+  currentOpenPort.write(0x10); 
+  currentOpenPort.write(0x03); 
   delay(1000);
 }
 
@@ -196,8 +236,8 @@ void drawTest() {
     // Should take 18.75ms each
     sendRun(DEV_AQUARITE_MASK); //Send "Set Aquarite Status" command
     //delay(500);
-    sendAquariteStatus(i+10, STAT_AQUARITE_HISALT);
-    emulateAllAvailableData();
+    sendAquariteStatus(i+10, STAT_AQUARITE_HISALT); 
+    emulateAllAvailableData(); 
     //delay(10);
   }
 }
@@ -262,4 +302,9 @@ STILL CRASHES:
  mac0010716:logFiles pjvancor$ less Jandy_log_262015175420_Output.txt 
  mac0010716:logFiles pjvancor$ less Jandy_log_262015175420_Output.txt 
  mac0010716:logFiles pjvancor$ 
+ */
+
+
+/* Info
+ http://forums.indigodomo.com/viewtopic.php?t=3212
  */

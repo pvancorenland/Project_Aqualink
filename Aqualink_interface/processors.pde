@@ -52,9 +52,9 @@ boolean processIncomingData(long timestamp, int readData ) {
   readData &=RS485INCDATAMASK;
   // Set timestamp and update "Current time"
   timestamp = updateCurrentByteTimestamp(timestamp);
-  if ( (logRawData == 1) ) {
-    printToRawLogFile(timestamp+" ");
-    printToRawLogFile(readData+" ");
+  if ( !areWeReadingRawLogFile() ) {
+    printToRawLogFile(timestamp+" ", RAWLogFileWriterHandle);
+    printToRawLogFile(readData +" ", RAWLogFileWriterHandle);
   }
   if ( showDebug(DEBUG_ON) == 1 ) {
     logTxt(reportVal(readData, 2)+" ", LOGTXT_DEBUG);
@@ -127,6 +127,14 @@ boolean processIncomingData(long timestamp, int readData ) {
       //logTxtLn(LOGTXT_WARNING);
       resetProcessIncomingData("LOOKINGFORETX ==> LOOKINGFORDATA", -2, LOOKINGFORDATA);
       break;
+      /*
+      case(DLEChar) :
+       // A 0x10h is inserted after a DLE in case it's part of the command/data, we need to remove it
+       // Increase ctl position to include the last (dropped) char
+       changeReadOutStatus(LOOKINGFORDATA);
+       incomingDataValuesCtr++;
+       break;
+       */
       case(NULChar) :
       // A 0x0h is inserted after a DLE in case it's part of the command/data, we need to remove it
       // Increase ctl position to include the last (dropped) char
@@ -327,7 +335,7 @@ void countProcessedBytes() {
   if ( newProcessedByteCounterTime < currentprocessedBytesTime ) {
     // Printout Statistics
     processedBps = processedByteCounter * 1000 / ( currentprocessedBytesTime - (newProcessedByteCounterTime - PROCESSEDBYTESMINTIME)  );
-    ProcessedBytesLine += "Received: "+processedByteCounter+" Bytes @"+processedBps+" Bps";
+    ProcessedBytesLine += "Received: "+showHumanReadable(processedByteCounter)+" Bytes @"+processedBps+"Bps";
     newProcessedByteCounterTime = currentprocessedBytesTime + PROCESSEDBYTESMINTIME;
     processedByteCounter = 0;
     if ( (emulatePowerCenterIDsCtr > 0)  ) {
@@ -528,7 +536,7 @@ String reportReadOutStatus() {
   return debugLine;
 }
 
-int convertIDToMask (int ID) {
+int convertIDToMask(int ID) {
   return ID&0xF8;
 }
 
@@ -1088,7 +1096,9 @@ void logTxtLn(int logTxtType) {
     // Don't show empty probe commands
     showString &= thisIsNotEmptyProbe;
     // Write values to Value log file
-    writeValuesToLogFile(0);
+    if ( areWeProcessingRAWLogFile() ) {
+      writeValuesToLogFile(0);
+    }
     break;
   case LOGTXT_INFO:
     if ( !displayThisOption("suppressReadoutInfo") ) {
@@ -1119,9 +1129,12 @@ void logTxtLn(int logTxtType) {
         logFilePrintln(2, "UPDATE PRINTUNPROCDATA FOR LOGTXT_WARNING!");
         logPrintUnprocessedData(0);
       }
-      logTxtString =  DEST_DETAILS_Spaces + " WARNING!:"+logTxtStrings[LOGTXT_WARNING][nowDecodingResponse]+"\n";
-      logTxtString += DEST_NODETAILS_Spaces + " 0>" + getLogTxtStringUnprocessedCmdResp(0) + "\n";
-      logTxtString += DEST_NODETAILS_Spaces + " 1>" + getLogTxtStringUnprocessedCmdResp(1) ;
+      logTxtString =  DEST_DETAILS_Spaces + " WARNING: "+logTxtStrings[LOGTXT_WARNING][nowDecodingResponse];
+      String testEmpty = trim(getLogTxtStringUnprocessedCmdResp(0))+trim(getLogTxtStringUnprocessedCmdResp(1));
+      if ( !testEmpty.equals("") ) {
+        logTxtString += "\n"+DEST_NODETAILS_Spaces + " 0>" + getLogTxtStringUnprocessedCmdResp(0) + "\n";
+        logTxtString += DEST_NODETAILS_Spaces + " 1>" + getLogTxtStringUnprocessedCmdResp(1) ;
+      }
     } else {
       printThisLine = 0;
     }
@@ -1275,14 +1288,6 @@ int displayThisDevice( int destination ) {
   return displayDevice;
 }
 
-String addSpaces(String Str, int nrOfSpaces) {
-  int nrSpacesAdded = nrOfSpaces-Str.length();
-  for (int i=0; i< nrSpacesAdded; i++ ) {
-    Str += " ";
-  }
-  return Str;
-}
-
 void timeStamp(String str) {
   currentMicroTimeStamp = getAccurateMicroTime();
   timeStampDelta = currentMicroTimeStamp-lastMicroTimeStamp;
@@ -1297,7 +1302,7 @@ int buttStat(int expectedDataSize, int[] buttonTest, int startPos, int endPos ) 
   int dataSize = endPos - startPos;
   // Only accept 'expectedDataSize' data Bytes, anything else means there's an issue
   if ( dataSize != expectedDataSize ) {
-    logTxtLn("Incorrect Nr "+dataSize+" of data bytes for buttStat() START = "+startPos+" END = "+endPos, LOGTXT_WARNING);
+    logTxtLn("Incorrect Nr "+dataSize+" of data bytes (expected:"+expectedDataSize+") for buttStat() START = "+startPos+" END = "+endPos, LOGTXT_WARNING);
     return 0;
   }
   int testVal = int((processDataValues[buttonPos+startPos] & buttonMask) != 0 );
@@ -1366,75 +1371,131 @@ void addValueToLogfile(int valueID) {
 }
 
 void writeValuesToLogFile(int init) {
-  String logStringTime;
+  String logStringData;
   String logString ="";
   String readOutValuesText = "";
+  String tmpTxt;
+  int currentLineSize = 0;
+  String logStringPlot   = "";
+  String logStringLabel  = "";
+  String logStringUnits  = "";
+  String logStringDigits = "";
+  String logStringTypes  = "";
+  int addSpacesToLogFile = 0;
 
   if ( init == 0) {
-    logStringTime = addSpaces(str(currentByteTimeStampMicroTime), LOG_VALUE_TIMESTAMPWIDTH);
+    logStringData   = addSpaces(printLong(currentByteTimeStampMicroTime), LOG_VALUE_TIMESTAMPWIDTH*addSpacesToLogFile);
   } else {
-    logStringTime = addSpaces(LOG_TIME_NAME, LOG_VALUE_TIMESTAMPWIDTH);
+    logStringData   = addSpaces(LOG_DATA_NAME, LOG_VALUE_TIMESTAMPWIDTH*addSpacesToLogFile);
+    logStringPlot   = addSpaces(LOG_PLOT_NAME, LOG_VALUE_TIMESTAMPWIDTH*addSpacesToLogFile);
+    logStringLabel  = addSpaces(LOG_LABEL_NAME, LOG_VALUE_TIMESTAMPWIDTH*addSpacesToLogFile);
+    logStringUnits  = addSpaces(LOG_UNITS_NAME, LOG_VALUE_TIMESTAMPWIDTH*addSpacesToLogFile);
+    logStringDigits = addSpaces(LOG_DIGITS_NAME, LOG_VALUE_TIMESTAMPWIDTH*addSpacesToLogFile);
+    logStringTypes  = addSpaces(LOG_TYPE_NAME, LOG_VALUE_TIMESTAMPWIDTH*addSpacesToLogFile);
   }
   if ( includeValueinLogFile(LOG_ORP_INCLUDE) ) {
     if ( init == 0) {
-      readOutValuesText += "ORP  = " + addSpaces(LOG_ORP_VAL + " " + LOG_ORP_UNIT, LOG_VAL_SPACES)+ "\n";
-      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_ORP_VAL, LOG_VALUE_COLUMWIDTH);
+      readOutValuesText += "ORP : " + addSpaces(LOG_ORP_VAL + LOG_ORP_UNIT, LOG_VAL_SPACES*addSpacesToLogFile);
+      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_ORP_VAL, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
     } else {
-      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_ORP_NAME, LOG_VALUE_COLUMWIDTH);
+      logStringData   += LOG_VALUE_SEPARATOR+addSpaces(LOG_ORP_NAME, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringPlot   += LOG_VALUE_SEPARATOR+addSpaces(LOG_ORP_AXISNR, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringLabel  += LOG_VALUE_SEPARATOR+addSpaces(LOG_ORP_AXISLABEL, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringUnits  += LOG_VALUE_SEPARATOR+addSpaces(LOG_ORP_UNIT, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringDigits += LOG_VALUE_SEPARATOR+addSpaces(LOG_ORP_DIGITS, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringTypes  += LOG_VALUE_SEPARATOR+addSpaces(LOG_ORP_PLOTTYPE, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
     }
   }
   if ( includeValueinLogFile(LOG_PH_INCLUDE) ) {
     if ( init == 0) {
-      readOutValuesText += "PH   = " + addSpaces(LOG_PH_VAL + LOG_PH_UNIT, LOG_VAL_SPACES);
-      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_PH_VAL, LOG_VALUE_COLUMWIDTH);
+      readOutValuesText += "PH  : " + addSpaces(LOG_PH_VAL + LOG_PH_UNIT, LOG_VAL_SPACES*addSpacesToLogFile);
+      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_PH_VAL, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
     } else {
-      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_PH_NAME, LOG_VALUE_COLUMWIDTH);
+      logStringData   += LOG_VALUE_SEPARATOR+addSpaces(LOG_PH_NAME, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringPlot   += LOG_VALUE_SEPARATOR+addSpaces(LOG_PH_AXISNR, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringLabel  += LOG_VALUE_SEPARATOR+addSpaces(LOG_PH_AXISLABEL, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringUnits  += LOG_VALUE_SEPARATOR+addSpaces(LOG_PH_UNIT, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringDigits += LOG_VALUE_SEPARATOR+addSpaces(LOG_PH_DIGITS, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringTypes  += LOG_VALUE_SEPARATOR+addSpaces(LOG_PH_PLOTTYPE, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
     }
   }   
+  if ( nextLOG_TOGGLE_TIME < millis() ) {
+    LOG_TOGGLE_LIGHT = 1- LOG_TOGGLE_LIGHT;
+    nextLOG_TOGGLE_TIME = millis() + LOG_TOGGLE_TIMEOUT;
+  }
+  if ( LOG_TOGGLE_LIGHT == 1 ) {
+    readOutValuesText += " *" ;
+  }
+
   if ( LOG_SALT_ENABLED ) {
-    readOutValuesText += "\nSALT = ";
+    readOutValuesText += "\nSALT: ";
   }
   if ( includeValueinLogFile(LOG_SALTPPM_INCLUDE) ) {
     if ( init == 0) {
-      readOutValuesText += addSpaces(LOG_SALTPPM_VAL + " " + LOG_SALTPPM_UNIT + " ", LOG_VAL_SPACES);
-      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_SALTPPM_VAL, LOG_VALUE_COLUMWIDTH);
+      readOutValuesText += addSpaces(LOG_SALTPPM_VAL + " " + LOG_SALTPPM_UNIT + " ", LOG_VAL_SPACES*addSpacesToLogFile);
+      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_SALTPPM_VAL, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
     } else {
-      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_SALTPPM_NAME, LOG_VALUE_COLUMWIDTH);
+      logStringData   += LOG_VALUE_SEPARATOR+addSpaces(LOG_SALTPPM_NAME, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringPlot   += LOG_VALUE_SEPARATOR+addSpaces(LOG_SALTPPM_AXISNR, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringLabel  += LOG_VALUE_SEPARATOR+addSpaces(LOG_SALTPPM_AXISLABEL, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringUnits  += LOG_VALUE_SEPARATOR+addSpaces(LOG_SALTPPM_UNIT, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringDigits += LOG_VALUE_SEPARATOR+addSpaces(LOG_SALTPPM_DIGITS, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringTypes  += LOG_VALUE_SEPARATOR+addSpaces(LOG_SALTPPM_PLOTTYPE, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
     }
   }
   if ( includeValueinLogFile(LOG_SALTPCT_INCLUDE) ) {
     if ( init == 0) {
-      readOutValuesText += addSpaces(LOG_SALTPCT_VAL + LOG_SALTPCT_UNIT, LOG_VAL_SPACES);
-      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_SALTPCT_VAL, LOG_VALUE_COLUMWIDTH);
+      readOutValuesText += addSpaces(LOG_SALTPCT_VAL + LOG_SALTPCT_UNIT, LOG_VAL_SPACES*addSpacesToLogFile);
+      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_SALTPCT_VAL, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
     } else {
-      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_SALTPCT_NAME, LOG_VALUE_COLUMWIDTH);
+      logStringData   += LOG_VALUE_SEPARATOR+addSpaces(LOG_SALTPCT_NAME, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringPlot   += LOG_VALUE_SEPARATOR+addSpaces(LOG_SALTPCT_AXISNR, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringLabel  += LOG_VALUE_SEPARATOR+addSpaces(LOG_SALTPCT_AXISLABEL, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringUnits  += LOG_VALUE_SEPARATOR+addSpaces(LOG_SALTPCT_UNIT, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringDigits += LOG_VALUE_SEPARATOR+addSpaces(LOG_SALTPCT_DIGITS, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringTypes  += LOG_VALUE_SEPARATOR+addSpaces(LOG_SALTPCT_PLOTTYPE, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
     }
   }
   if ( LOG_PUMP_ENABLED ) {
-    readOutValuesText += "\nPUMP = ";
+    readOutValuesText += "\nPUMP: ";
   }
   if ( includeValueinLogFile(LOG_PUMPGPM_INCLUDE) ) {
     if ( init == 0) {
-      readOutValuesText += addSpaces(LOG_PUMPGPM_VAL+ " " + LOG_PUMPGPM_UNIT + " ", LOG_VAL_SPACES) ;
-      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPGPM_VAL, LOG_VALUE_COLUMWIDTH);
+      readOutValuesText += addSpaces(LOG_PUMPGPM_VAL + " "  +LOG_PUMPGPM_UNIT + " ", LOG_VAL_SPACES*addSpacesToLogFile) ;
+      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPGPM_VAL, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
     } else {
-      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPGPM_NAME, LOG_VALUE_COLUMWIDTH);
+      logStringData   += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPGPM_NAME, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringPlot   += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPGPM_AXISNR, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringLabel  += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPGPM_AXISLABEL, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringUnits  += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPGPM_UNIT, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringDigits += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPGPM_DIGITS, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringTypes  += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPGPM_PLOTTYPE, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
     }
   }
   if ( includeValueinLogFile(LOG_PUMPRPM_INCLUDE) ) {
     if ( init == 0) {
-      readOutValuesText += addSpaces(LOG_PUMPRPM_VAL + " " + LOG_PUMPRPM_UNIT + " ", LOG_VAL_SPACES);
-      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPRPM_VAL, LOG_VALUE_COLUMWIDTH);
+      readOutValuesText += addSpaces(LOG_PUMPRPM_VAL + " " + LOG_PUMPRPM_UNIT + " ", LOG_VAL_SPACES*addSpacesToLogFile);
+      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPRPM_VAL, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
     } else {
-      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPRPM_NAME, LOG_VALUE_COLUMWIDTH);
+      logStringData   += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPRPM_NAME, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringPlot   += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPRPM_AXISNR, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringLabel  += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPRPM_AXISLABEL, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringUnits  += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPRPM_UNIT, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringDigits += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPRPM_DIGITS, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringTypes  += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPRPM_PLOTTYPE, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
     }
   }
   if ( includeValueinLogFile(LOG_PUMPWATT_INCLUDE) ) {
     if ( init == 0) {
-      readOutValuesText += " " + addSpaces(LOG_PUMPWATT_VAL + " " + LOG_PUMPWATT_UNIT, LOG_VAL_SPACES);
-      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPWATT_VAL, LOG_VALUE_COLUMWIDTH);
+      readOutValuesText += " " + addSpaces(LOG_PUMPWATT_VAL+ LOG_PUMPWATT_UNIT, LOG_VAL_SPACES*addSpacesToLogFile);
+      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPWATT_VAL, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
     } else {
-      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPWATT_NAME, LOG_VALUE_COLUMWIDTH);
+      logStringData   += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPWATT_NAME, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringPlot   += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPWATT_AXISNR, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringLabel  += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPWATT_AXISLABEL, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringUnits  += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPWATT_UNIT, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringDigits += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPWATT_DIGITS, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringTypes  += LOG_VALUE_SEPARATOR+addSpaces(LOG_PUMPWATT_PLOTTYPE, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
     }
   }
   if ( LOG_TEMP_ENABLED ) {
@@ -1442,36 +1503,101 @@ void writeValuesToLogFile(int init) {
   }
   if ( includeValueinLogFile(LOG_AIRTEMP_INCLUDE) ) {
     if ( init == 0) {
-      readOutValuesText += "AIR  = " + addSpaces(LOG_AIRTEMP_VAL + " " + LOG_AIRTEMP_UNIT + " ", LOG_VAL_SPACES) + "\n";
-      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_AIRTEMP_VAL, LOG_VALUE_COLUMWIDTH);
+      readOutValuesText += "AIR : " + addSpaces(LOG_AIRTEMP_VAL+ LOG_AIRTEMP_UNIT + " ", (LOG_VAL_SPACES-4)*addSpacesToLogFile);
+      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_AIRTEMP_VAL, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
     } else {
-      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_AIRTEMP_NAME, LOG_VALUE_COLUMWIDTH);
+      logStringData   += LOG_VALUE_SEPARATOR+addSpaces(LOG_AIRTEMP_NAME, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringPlot   += LOG_VALUE_SEPARATOR+addSpaces(LOG_AIRTEMP_AXISNR, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringLabel  += LOG_VALUE_SEPARATOR+addSpaces(LOG_AIRTEMP_AXISLABEL, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringUnits  += LOG_VALUE_SEPARATOR+addSpaces(LOG_AIRTEMP_UNIT, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringDigits += LOG_VALUE_SEPARATOR+addSpaces(LOG_AIRTEMP_DIGITS, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringTypes  += LOG_VALUE_SEPARATOR+addSpaces(LOG_AIRTEMP_PLOTTYPE, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
     }
   }
   if ( includeValueinLogFile(LOG_POOLTEMP_INCLUDE) ) {
     if ( init == 0) {
-      readOutValuesText += "POOL = " + addSpaces(LOG_POOLTEMP_VAL + " " + LOG_POOLTEMP_UNIT, LOG_VAL_SPACES);
-      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_POOLTEMP_VAL, LOG_VALUE_COLUMWIDTH);
+      readOutValuesText += "POOL: " + addSpaces(LOG_POOLTEMP_VAL+ LOG_POOLTEMP_UNIT, (LOG_VAL_SPACES-4)*addSpacesToLogFile);
+      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_POOLTEMP_VAL, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
     } else {
-      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_POOLTEMP_NAME, LOG_VALUE_COLUMWIDTH);
+      logStringData   += LOG_VALUE_SEPARATOR+addSpaces(LOG_POOLTEMP_NAME, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringPlot   += LOG_VALUE_SEPARATOR+addSpaces(LOG_POOLTEMP_AXISNR, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringLabel  += LOG_VALUE_SEPARATOR+addSpaces(LOG_POOLTEMP_AXISLABEL, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringUnits  += LOG_VALUE_SEPARATOR+addSpaces(LOG_POOLTEMP_UNIT, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringDigits += LOG_VALUE_SEPARATOR+addSpaces(LOG_POOLTEMP_DIGITS, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringTypes  += LOG_VALUE_SEPARATOR+addSpaces(LOG_POOLTEMP_PLOTTYPE, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
     }
   }
-  if ( (displayThisOption("onlyReportNewValuesinLog") == false) | (logString.equals(lastValuesLogString) == false) ) {
-    valuesLogFileHandle.println(logStringTime + logString);
-    lastValuesLogString = logString;
-    //println("LOGSTR: "+logString);
-  } else {
-    //println("NOLOGSTR");
+  if ( includeValueinLogFile(LOG_SPATEMP_INCLUDE) ) {
+    if ( init == 0) {
+      readOutValuesText += "SPA : " + addSpaces(LOG_SPATEMP_VAL+ LOG_SPATEMP_UNIT, LOG_VAL_SPACES*addSpacesToLogFile) + "\n";
+      logString += LOG_VALUE_SEPARATOR+addSpaces(LOG_SPATEMP_VAL, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+    } else {
+      logStringData   += LOG_VALUE_SEPARATOR+addSpaces(LOG_SPATEMP_NAME, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringPlot   += LOG_VALUE_SEPARATOR+addSpaces(LOG_SPATEMP_AXISNR, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringLabel  += LOG_VALUE_SEPARATOR+addSpaces(LOG_SPATEMP_AXISLABEL, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringUnits  += LOG_VALUE_SEPARATOR+addSpaces(LOG_SPATEMP_UNIT, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringDigits += LOG_VALUE_SEPARATOR+addSpaces(LOG_SPATEMP_DIGITS, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+      logStringTypes  += LOG_VALUE_SEPARATOR+addSpaces(LOG_SPATEMP_PLOTTYPE, LOG_VALUE_COLUMWIDTH*addSpacesToLogFile);
+    }
   }
-
-  if ( init == 0 ) {
+  if ( includeValueinLogFile(LOG_DEVICES_LIST_INCLUDE) ) {
+    if ( init == 0) {
+      for (int i=0; i< CTLDEVICESLISTSPLIT.length; i++ ) {
+        tmpTxt = CTLDEVICESLISTSPLIT[i]+": " + LOG_DEVICES_LIST[i]+" ";
+        if ( currentLineSize + tmpTxt.length() > MAXREADOUTLINESIZE ) {
+          readOutValuesText += "\n";
+          currentLineSize = 0;
+        }
+        readOutValuesText += tmpTxt;
+        currentLineSize += tmpTxt.length();
+        logString += LOG_VALUE_SEPARATOR+addSpaces(str(LOG_DEVICES_LIST[i]), (CTLDEVICESLISTSPLIT[i].length()+1)*addSpacesToLogFile);
+      }
+    } else {
+      int columWidth; 
+      for (int i=0; i< CTLDEVICESLISTSPLIT.length; i++ ) {
+        columWidth = CTLDEVICESLISTSPLIT[i].length()+1;
+        logStringData   += LOG_VALUE_SEPARATOR+addSpaces(CTLDEVICESLISTSPLIT[i], columWidth*addSpacesToLogFile);
+        logStringPlot   += LOG_VALUE_SEPARATOR+addSpaces(LOG_DEVICES_AXISNR, columWidth*addSpacesToLogFile);
+        logStringLabel  += LOG_VALUE_SEPARATOR+addSpaces(LOG_DEVICES_AXISLABEL, columWidth*addSpacesToLogFile);
+        logStringUnits  += LOG_VALUE_SEPARATOR+addSpaces(LOG_DEVICES_UNIT, columWidth*addSpacesToLogFile);
+        logStringDigits += LOG_VALUE_SEPARATOR+addSpaces(LOG_DEVICES_DIGITS, columWidth*addSpacesToLogFile);
+        logStringTypes  += LOG_VALUE_SEPARATOR+addSpaces(LOG_DEVICES_PLOTTYPE, columWidth*addSpacesToLogFile);
+      }
+    }
+  }
+  if ( init == 1 ) {
+    valuesLogFileHandle.println(logStringData);   // Write Header with data names
+    valuesLogFileHandle.println(logStringPlot);   // Write Header with axis numbers
+    valuesLogFileHandle.println(logStringLabel);  // Write Header with axis labels
+    valuesLogFileHandle.println(logStringUnits);  // Write Header with axis units
+    valuesLogFileHandle.println(logStringDigits); // Write Header with axis Digits
+    valuesLogFileHandle.println(logStringTypes);  // Write Header with axis types
+  } else {
+    if (displayThisOption("onlyReportNewValuesinLog")) {
+      if ((logString.equals(lastValuesLogString))) {
+        lastValuesLogSkipped = 1; // We skipped at least one log point
+        lastValuesLogTime    = logStringData;
+        //println("NOLOGSTR");
+      } else {
+        if ( lastValuesLogSkipped == 1 ) {
+          // Add a line with the last log entry that was skipped to make plotting look cleaner
+          valuesLogFileHandle.println(lastValuesLogTime + lastValuesLogString);
+        }
+        valuesLogFileHandle.println(logStringData + logString);
+        lastValuesLogSkipped = 0; // We didn't skip the last log
+        lastValuesLogString  = logString;
+        //println("LOGSTR: "+logString);
+      }
+    } else {
+      // Always log the data if displayThisOption("onlyReportNewValuesinLog" == false
+      valuesLogFileHandle.println(logStringData + logString);
+    }
     updateReadoutValuesText(readOutValuesText);
   }
   //  println("LS: "+logString);
 }
 
 boolean includeValueinLogFile(int valueMask) {
-
   if ( (reportValuesInLogfile&valueMask) == valueMask ) {
     return true;
   } else {
@@ -1504,93 +1630,40 @@ boolean areWeEmulatingPowerCenter() {
 }
 
 boolean areWeReadingRawLogFile() {
-  if ( readFileData > 0 ) {
-    return true;
-  } else {
-    return false;
-  }
+  return ( (readFileData == READFILEDATA_READ)||(readFileData == READFILEDATA_READ_PROCESS)||(readFileData == READFILEDATA_REPLAY_ONCE)||(readFileData == READFILEDATA_REPLAY_LOOP) ) ;
+}
+
+boolean areWeProcessingRAWLogFile() {
+  return ( (readFileData == READFILEDATA_READ_PROCESS )||(readFileData == READFILEDATA_REPLAY_ONCE)||(readFileData ==READFILEDATA_REPLAY_LOOP ));
 }
 
 boolean areWeReplayingRawLogFile() {
-  if ( readFileData > 1 ) {
-    return true;
-  } else {
-    return false;
-  }
+  return ( (readFileData == READFILEDATA_REPLAY_ONCE )||(readFileData == READFILEDATA_REPLAY_LOOP ));
 }
 
 void readRawLogFile() {
-  logTxtLn("Reading and processing RAW log File", LOGTXT_INFO);
-  rawLogFileHasBeenRead = 1;
-  rawLogFileHasTimestamp = 0;
-  try {
-    rawLogFileReadLine = logFileReader.readLine();
-  } 
-  catch (IOException e) {
-    e.printStackTrace();
-    rawLogFileReadLine = null;
-  }
-  int noData = 0;
-  if (rawLogFileReadLine == null) {
-    // Something is wrong
-    println("Whoops, the file "+logFileNameBase+RAWLogFileExtension+" seems to be empty!");
-    noData = 1;
+  logTxtLn("Processing RAW logFile", LOGTXT_INFO);
+  if ( RAWLogFileRead.errorCode == RAWLOGFILEISEMPTY ) {
+    RAWLogFileRead.nrBytes = 0;
+    RAWLogFileRead.dataLength = 0;
   } else {
-    if ( rawLogFileReadLine.indexOf(RAWLOGFILEHEADER) == 0 ) {
-      rawLogFileHasTimestamp = 1;
-      rawLogFileReadLine += " -1";
-      rawLogFileReadLine = rawLogFileReadLine.substring(RAWLOGFILEHEADER.length());
-      String[] tmpVals = split(rawLogFileReadLine, " ");
-      String rawLogFileDateStr = tmpVals[2];
-      Date df = getDateFromString(rawLogFileDateStr);
-      println("DATE ====> "+rawLogFileDateStr+" === "+df.getTime());
-      
-      
-      try {
-        rawLogFileReadLine = logFileReader.readLine();
-      } 
-      catch (IOException e) {
-        println("Oh Oh!");
-        e.printStackTrace();
-        rawLogFileReadLine = null;
-      }
-      if (rawLogFileReadLine == null) {
-        // Something is wrong
-        println("Whoops, the file "+logFileNameBase+RAWLogFileExtension+" seems to be empty past the TIMESTAMP header!");
-        noData = 1;
-      }
-    }
-    if ( noData == 1 ) {
-      rawLogFileNrBytes = 0;
-      rawLogFileDataLength = 0;
+    rawLogFileData = split(RAWLogFileRead.dataReadLine, " ");
+    if ( RAWLogFileRead.hasTimeStamp == 1 ) {
+      RAWLogFileRead.Incr = 2;
+      // Make the data length number even
+      RAWLogFileRead.nrBytes = rawLogFileData.length/2;
+      logTxtLn("Processing "+showHumanReadable(RAWLogFileRead.nrBytes)+" RAW logFile entries with timestamp", LOGTXT_INFO);
+      RAWLogFileRead.dataLength = RAWLogFileRead.nrBytes*2;
     } else {
-      rawLogFileData = split(rawLogFileReadLine, " ");
-      if ( rawLogFileHasTimestamp == 1 ) {
-        rawLogFileIncr = 2;
-        // Make the data length number even
-        rawLogFileNrBytes = rawLogFileData.length/2;
-        logTxtLn("Reading "+showHumanReadable(rawLogFileNrBytes)+" RAW log file entries with timestamp", LOGTXT_INFO);
-        rawLogFileDataLength = rawLogFileNrBytes*2;
-      } else {
-        rawLogFileIncr = 1;
-        rawLogFileNrBytes = rawLogFileData.length;
-        rawLogFileDataLength = rawLogFileNrBytes;
-        logTxt("Reading "+showHumanReadable(rawLogFileNrBytes)+" RAW log file entries without timestamp", LOGTXT_INFO);
-        logTxtLn(" INCR: "+rawLogFileIncr, LOGTXT_INFO);
-      }
+      RAWLogFileRead.Incr = 1;
+      RAWLogFileRead.nrBytes = rawLogFileData.length;
+      RAWLogFileRead.dataLength = RAWLogFileRead.nrBytes;
+      logTxt("Processing "+showHumanReadable(RAWLogFileRead.nrBytes)+" RAW logFile entries without timestamp", LOGTXT_INFO);
+      logTxtLn(" INCR: "+RAWLogFileRead.Incr, LOGTXT_INFO);
     }
   }
 }
 
-long getAccurateMilliTime() {
-  long accuTime = System.nanoTime()/1000000;
-  return accuTime;
-}
-
-long getAccurateMicroTime() {
-  long accuTime = System.nanoTime()/1000;
-  return accuTime;
-}
 
 void processRAWLogFileUntilRefreshTimeMicroUpdate() {
   nextRefreshTimeMicro = getAccurateMicroTime() + REFRESHTIMEMICROUPDATE;
@@ -1625,25 +1698,24 @@ boolean processNextRAWLogFilePortion() {
   if ( waitingForNextStepClick == 0 ) {
     long nrProcessedAtOnce = 0;
     // Process the data until the end of a command/response is reached
-    while ( (rawLogFileDataPosition < rawLogFileDataLength )&( processedCommandResponse == 0)&(nrProcessedAtOnce < MAXNRPROCESSEDATONCE) ) {
-      //println("RLP: "+rawLogFileDataPosition+" RLFDL: "+rawLogFileDataLength+" PRCR: "+processedCommandResponse);
-      if ( rawLogFileHasTimestamp == 1) {
-        rawLogFileTimestampDelta = Long.parseLong(rawLogFileData[rawLogFileDataPosition]);
-        rawLogFileDataVal = int(rawLogFileData[rawLogFileDataPosition+1]);
+    while ( (RAWLogFileRead.dataPosition < RAWLogFileRead.dataLength )&( processedCommandResponse == 0)&(nrProcessedAtOnce < MAXNRPROCESSEDATONCE) ) {
+      //println("RLP: "+RAWLogFileRead.dataPosition+" RLFDL: "+RAWLogFileRead.dataLength+" PRCR: "+processedCommandResponse);
+      if ( RAWLogFileRead.hasTimeStamp == 1) {
+        rawLogFileTimestampDelta = Long.parseLong(rawLogFileData[RAWLogFileRead.dataPosition]);
+        rawLogFileDataVal        = int(rawLogFileData[RAWLogFileRead.dataPosition+1]);
       } else {
         rawLogFileTimestampDelta = TIMESTAMPMULTIPLIER;
-        //println("INT: "+rawLogFileData[rawLogFileDataPosition]+" ==> "+int(rawLogFileData[rawLogFileDataPosition]));
-        rawLogFileDataVal = int(rawLogFileData[rawLogFileDataPosition]);
+        rawLogFileDataVal        = int(rawLogFileData[RAWLogFileRead.dataPosition]);
       }
-      rawLogFileDataPosition += rawLogFileIncr;
-      if ( readFileData > 1 ) {
+      RAWLogFileRead.dataPosition += RAWLogFileRead.Incr;
+      if ( areWeReplayingRawLogFile() ) {
         // We are replaying the previous logFile
         currentOpenPort.write(rawLogFileDataVal);
       }
       if ( processIncomingData(rawLogFileTimestampDelta, rawLogFileDataVal) ) {
         // We finished a Command or Response
         processedCommandResponse = 1;
-        if ( readFileData > 1 ) {
+        if ( areWeReplayingRawLogFile()) {
           startReplayDelay();
         }
         if ( showDisplayOptions == 1 ) {
@@ -1658,7 +1730,7 @@ boolean processNextRAWLogFilePortion() {
       }
       nrProcessedAtOnce++;
     }
-    if ( rawLogFileDataPosition >= rawLogFileDataLength ) {
+    if ( RAWLogFileRead.dataPosition >= RAWLogFileRead.dataLength ) {
       // End of Log File
       finishProcessingRAWLogFile();
       return false;
@@ -1685,7 +1757,7 @@ void startReplayDelay() {
 void finishProcessingRAWLogFile() {
   // We reached the end of the logFileData
   processLastBytes();
-  logTxtLn("Processed "+showHumanReadable(rawLogFileNrBytes)+"B of pool data", LOGTXT_INFO );
+  logTxtLn("Processed "+showHumanReadable(RAWLogFileRead.nrBytes)+"B of pool data", LOGTXT_INFO );
   setDrawMode(DRAW_FINISH_FILES);
 }
 
@@ -1699,20 +1771,19 @@ String showLastDigits(long value, int numbers) {
 
 int compareMessage( int startPos, int msgLength, String message ) {
   int validMessage = 1;
+  //println("MSG: \""+message+"\" MSGL: "+msgLength);
   for ( int i = 0; i < msgLength; i++ ) {
     if ( char(incomingDataValues[i + startPos]) != message.charAt(i) ) {
-
       //Serial.print(char(incomingDataValues[i+startPos]));
       //Serial.print("!=");
       //Serial.println(message[i]);
-
       validMessage = 0;
     }
   }
   return validMessage;
 }
 
-int readTemp ( int startPos ) {
+int readTemp( int startPos ) {
   int temp;
   temp = ascii2Value(incomingDataValues[startPos]) * 100;
   startPos ++;
@@ -1816,7 +1887,7 @@ void gotoNextRawLogFile() {
   if ( rawLogFileReadNameBaseNr < rawLogFileReadNameBaseNrOfFiles ) {
     setDrawMode(DRAW_INIT_FILES);
   } else {
-    if ( readFileData == 3 ) {
+    if ( readFileData == READFILEDATA_REPLAY_LOOP ) {
       //Repeat
       rawLogFileReadNameBaseNr = 0;
       setDrawMode(DRAW_INIT_FILES);

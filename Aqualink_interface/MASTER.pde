@@ -2,20 +2,20 @@
 //=== MASTER COMMS ===//
 //====================//
 
-int processResponseToMASTER (int response, int destination) {
+int processResponseToMASTER(int response, int destination) {
   if ( lastDestination == DEV_MASTER_MASK ) {
     logTxtLn("LAST DESTINATION WAS MASTER in processResponseToMASTER! ", LOGTXT_WARNING);
   }
     if ( destination != DEV_MASTER_MASK ) {
     logTxtLn("DESTINATION WAS NOT MASTER in processResponseToMASTER! ", LOGTXT_WARNING);
   }
-  //logFileHandle.println("PROCMASTERRESPONSE COMM="+response);
-  int lastDestinationMask = lastDestination&0xFC;
+  int lastDestinationMask = lastDestination&0xF8;
+  //logFileHandle.println("PROCMASTERRESPONSE COMM="+response+" LAST DEST: 0x"+reportVal(lastDestination, 2)+" ==>0x"+reportVal(lastDestinationMask, 2));
   switch(lastDestinationMask) {
     case ( DEV_AQUARITE_MASK ) :
     return processAquariteResponse(lastDestination, lastCommand, response, 2, processDataValuesCtr);
     case ( DEV_PCDOCK_MASK ) :
-    return processAquariteResponse(lastDestination, lastCommand, response, 2, processDataValuesCtr);
+    return processPCDOCKResponse(lastDestination, lastCommand, response, 2, processDataValuesCtr);
     case ( DEV_LXI_LRZE_MASK ) :
     return processLXI_LRZEResponse(lastDestination, lastCommand, response, 2, processDataValuesCtr);
     case ( DEV_CHEMLINK_MASK ) :
@@ -31,7 +31,7 @@ int processResponseToMASTER (int response, int destination) {
     case ( DEV_RPC_MASK ) :
     return processRPCResponse(lastDestination, lastCommand, response, 2, processDataValuesCtr);
     case ( DEV_AQUALINK_2_MASK ) :
-    return processAQUALINK_2NDResponse(lastDestination, lastCommand, response, 2, processDataValuesCtr);
+    return processAQUALINK_2_Response(lastDestination, lastCommand, response, 2, processDataValuesCtr);
   default:
     return processOTHERResponse(lastDestination, lastCommand, response, 2, processDataValuesCtr);
   }

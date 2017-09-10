@@ -33,7 +33,7 @@ int processAQUARITECommand(int command, int destination) {
   return validCommand;
 }
 
-int processAQUARITECommandIsValid (int command) {
+int processAQUARITECommandIsValid(int command) {
   switch(command) {
     case(CMD_PROBE):
     logTxtProbe();
@@ -67,7 +67,7 @@ void emulateAQUARITE(int command, int destination) {
   if ( emulateThisDevice(destination) == 1) {
     switch(command) {
       case(CMD_PROBE):
-      send_ACK("AQUARITE", 2);
+      send_ACK("AQUARITE", 2, command);
       break;
       case(RESP_AQUARITE_STAT):
       sendAquariteStatus(AQRppm, AQRStatus);
@@ -102,6 +102,9 @@ int processAquariteResponse(int deviceID, int command, int response, int startNr
     return 1;
     case(CMD_AQUARITE_IDENT) :
     processAquariteResponse_Ident(startNr, endNr);
+    return 1;
+    case(CMD_AQUARITE_STAT2) :
+    processValidGenericACK_Response(CMD_AQUARITE_STAT2, startNr, endNr);
     return 1;
     case(CMD_PROBE):
     processPROBEResponse(lastDestination);

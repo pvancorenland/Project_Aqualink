@@ -1,4 +1,4 @@
-int processPDA_JDACommand (int command, int destination) {
+int processPDA_JDACommand(int command, int destination) {
   doNothing(destination);
   switch(command) {
     case(CMD_PROBE):

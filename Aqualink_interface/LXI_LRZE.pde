@@ -1,12 +1,12 @@
 //LXI_LRZE commands
-final int CMD_LXI_LRZE_PROBE  = CMD_PROBE;    //0x00
+final int CMD_LXI_LRZE_PROBE  = CMD_PROBE;  // 0x00
 final int CMD_LXI_LRZE_STATUS = CMD_STATUS; // 0x02s
-
 final int CMD_LXI_LRZE_PING   = 0x0C;
+
 // LXI_LRZE responses to Master
 final int RESP_LXI_LRZE_PONG  = 0x0D;
 
-int processLXI_LRZECommand (int command, int destination) {
+int processLXI_LRZECommand(int command, int destination) {
   doNothing(destination);
   switch(command) {
     case(CMD_LXI_LRZE_PROBE):

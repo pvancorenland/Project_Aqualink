@@ -5,7 +5,7 @@
 final int CMD_RPC_0x09     = 0x09;
 final int CMD_RPC_STATUS    = CMD_STATUS;   //0x02
 
-int processRPCCommand (int command, int destination) {
+int processRPCCommand(int command, int destination) {
   doNothing(destination);
   switch(command) {
     case(CMD_PROBE):
@@ -35,7 +35,7 @@ int processRPCResponse(int deviceID, int command, int response, int startNr, int
     checkSPAButtonStatus(2, processDataValuesCtr);
     return 1;
     case(CMD_RPC_0x09) :
-    processValidGenericACKResponse(command, startNr, endNr);
+    processValidGenericACK_Response(command, startNr, endNr);
     return 1;
   default:
     unknownResponse(deviceID, command, response, startNr, endNr);

@@ -1,3 +1,5 @@
+
+
 void unknownResponse(int deviceID, int command, int response, int startNr, int endNr) {
   String commandDescription = "";
   if ( command == UNKNOWN_COMMAND ) {
@@ -8,12 +10,12 @@ void unknownResponse(int deviceID, int command, int response, int startNr, int e
   logTxtData(startNr, endNr);
 }
 
-void processValidGenericACKResponse(String txt, int command, int startNr, int endNr) {
+void processValidGenericACK_Response(String txt, int command, int startNr, int endNr) {
   logTxt(txt+" ACK", LOGTXT_TYPE);
   verifyACKToCommand(command, startNr, endNr);
 }
 
-void processValidGenericACKResponse(int command, int startNr, int endNr) {
+void processValidGenericACK_Response(int command, int startNr, int endNr) {
   logTxt(reportValx(command, 2)+" ACK", LOGTXT_TYPE);
   verifyACKToCommand(command, startNr, endNr);
 }
@@ -29,21 +31,22 @@ void verifyACKToCommand(int command, int startNr, int endNr ) {
 }
 
 void showMemory() {
-  if ( !processSingleRAWFile ) {
-    // The amount of memory allocated so far (usually the -Xms setting)
-    long allocated = Runtime.getRuntime().totalMemory();
-
-    // Free memory out of the amount allocated (value above minus used)
-    long free = Runtime.getRuntime().freeMemory();
-
-    // The maximum amount of memory that can eventually be consumed
-    // by this application. This is the value set by the Preferences
-    // dialog box to increase the memory settings for an application.
-    long maximum = Runtime.getRuntime().maxMemory();
-    String memStats = "Tot Memory: "+showHumanReadable(allocated) + " / Free Memory: "+showHumanReadable(free) + " / Max Memory: "+showHumanReadable(maximum);
-    println(memStats);
-    if (!(logFileHandle == null) ) {
-      logTxtLn(memStats, LOGTXT_INFO);
+  if ( (displayThisOption("showMemoryStatistics"))&&(processSingleRAWFile)) {
+    if ( !processSingleRAWFile ) {
+      // The amount of memory allocated so far (usually the -Xms setting)
+      long allocated = Runtime.getRuntime().totalMemory();
+      // Free memory out of the amount allocated (value above minus used)
+      long free = Runtime.getRuntime().freeMemory();
+      // The maximum amount of memory that can eventually be consumed
+      // by this application. This is the value set by the Preferences
+      // dialog box to increase the memory settings for an application.
+      long maximum = Runtime.getRuntime().maxMemory();
+      String memStats = "Tot Memory: "+showHumanReadable(allocated) + " / Free Memory: "+showHumanReadable(free) + " / Max Memory: "+showHumanReadable(maximum);
+      if (!(logFileHandle == null) ) {
+        logTxtLn(memStats, LOGTXT_INFO);
+      } else {
+        println(memStats);
+      }
     }
   }
 }
@@ -76,101 +79,279 @@ File[] listFiles(String dir) {
   }
 }
 
+String getLogFileNameBase(long timeStamp) {
+  String opt = "Jandy_log_"+rawLogFileDateFormat.format(timeStamp);
+  return opt;
+}
+
 boolean initLogFiles() {
+  //=======================================//
+  // Open Output, RAW and VALUES log files //
+  //=======================================//
   // Initialize timing values
   initLogTimes();
-//  Date d = new Date();
-  Date d = noDateFound;
-  //  for ( int i=0; i< 20; i++ ) {
-  //    delay(1000);
-  //d = Date();
-  rawLogFileStartTimestamp = d.getTime();
-  //    println(i+" "+rawLogFileStartTimestamp);
-  //  }
-
-  // Open Output and VALUES log files
-  // Setup the file with the logs
+  Date d = new Date();
+  logFileStartTimestamp = d.getTime();
+  //=======================================//
+  // Setup the name base for the log files //
+  //=======================================//
   if ( areWeReadingRawLogFile() ) {
     logFileNameBase = getRawLogFileReadNameBase();
   } else {
     if ( useLogFileNameBase == "" ) {
-      //logFileNameBase = "Jandy_log_"+nf(day(), 2)+nf(month(), 2)+year()+nf(hour(), 2)+nf(minute(), 2)+nf(second(), 2); // Record log data to this file
-      // logFileNameBase = "Jandy_log_"+nf(day(), 2)+"-"+nf(month(), 2)+"-"+year()+"_"+nf(hour(), 2)+":"+nf(minute(), 2)+":"+nf(second(), 2); // Record log data to this file
-      logFileNameBase = "Jandy_log_"+rawLogFileDateFormat.format(rawLogFileStartTimestamp); // Record log data to this file
+      logFileNameBase = getLogFileNameBase(logFileStartTimestamp); // Record log data to this file
     } else {
       logFileNameBase = useLogFileNameBase;
     }
   }
-
   if ( logFileNameBase == "" ) {
-    println("logFileNameBase is empty, Aborting!");
+    logTxtLn("logFileNameBase is empty, Aborting!", LOGTXT_WARNING);
     return false;
   }
-  logFileNameBase = logFilesPath+logFileNameBase;
+  //logFileNameBase = logFilesPath+logFileNameBase;
+  //=================//
+  // Output Log file //
+  //=================//
   // Default output log file//  
+  // This needs to be opened before all the others since it is used by logTxtLn()
   String outputLogFileName = logFileNameBase+outputFileExtension;
-  File fOutput = new File(dataPath(outputLogFileName));
+  File fOutput = new File(dataPath(logFilesPath+outputLogFileName));
   if ( (fOutput.exists())&(dontOverWriteOutputFiles) ) {
     println("Output logFile "+outputLogFileName+" already exists, skipping!");
     return false;
   }
-  logFileHandle = createWriter(outputLogFileName);
-  logTxtLn("Opened output logFile "+outputLogFileName+" ==> "+logFileHandle+" at: "+d+" = "+rawLogFileStartTimestamp, LOGTXT_INFO);
-
+  logFileHandle = createWriter(logFilesPath+outputLogFileName);
+  logTxtLn("Opened output logFile "+outputLogFileName+" at: "+d+" = "+logFileStartTimestamp, LOGTXT_INFO);
+  //==============//
+  // RAW Log file //
+  //==============//
   // RAW data and timestamp output log //  
-  if ( areWeReadingRawLogFile() ) {
-    logRawData = 0;
-  } 
-  // Output Values File //
-  String valuesFileName = logFileNameBase+valuesFileExtension;
-  File fValues = new File(dataPath(valuesFileName));
-  if ( (fValues.exists())&(dontOverWriteOutputFiles) ) {
-    println("Output logFile "+valuesFileName+" already exists, skipping!");
-    return false;
-  }
-  valuesLogFileHandle = createWriter(valuesFileName);
-  writeValuesToLogFile(1);
-  logTxtLn("Opened Values logFile "+valuesFileName+" ==> "+valuesLogFileHandle, LOGTXT_INFO);
   // RAW Data LogFile //
   String RAWLogFileName = logFileNameBase+RAWLogFileExtension;
-  if ( logRawData == 1 ) {
-    File fRAW = new File(dataPath(RAWLogFileName));
+  if ( areWeReadingRawLogFile() ) {
+    //==================================//
+    // Open the RAW logfile for Reading //
+    //==================================//
+    verifyAndCorrectRAWLogFileRead(logFilesPath, RAWLogFileName, true);
+  } else {
+    //==================================//
+    // Open the RAW logfile for Writing //
+    //==================================//
+    File fRAW = new File(dataPath(logFilesPath+RAWLogFileName));
     if ( fRAW.exists() ) {
-      println("Output logFile "+RAWLogFileName+" already exists, skipping!");
+      println("RAW logFile "+RAWLogFileName+" already exists, skipping!");
+      RAWLogFileRead.errorCode = RAWLOGFILEALREADYEXISTS;
+    } else {
+      RAWLogFileWriterHandle = createWriter(logFilesPath+RAWLogFileName);
+      RAWLogFileValuesWritten = 0;
+      logTxtLn("Opened RAW logFile "+RAWLogFileName+" for up to "+RAWLogFileValuesWrittenMax+" values", LOGTXT_INFO);
+      printToRawLogFile(createLogFileHeader(RAWLOGFILEHEADER, logFileStartTimestamp)+"\n", RAWLogFileWriterHandle);
+    }
+  }
+  if (RAWLogFileRead.errorCode != RAWLOGFILEISGOOD ) {
+    return false;
+  }
+  if ( areWeProcessingRAWLogFile() ) {
+    //====================//
+    // Output Values file //
+    //====================//
+    // Output Values File //
+    String valuesFileName = logFileNameBase+valuesFileExtension;
+    if (!testValuesFileNameForWriting(logFilesPath+valuesFileName) ) {
       return false;
     }
-    rawLogFileHandle = createWriter(RAWLogFileName);
-    rawLogFileValuesWritten = 0;
-    logTxtLn("Opened RAW    logFile "+RAWLogFileName+" ==> "+rawLogFileHandle, LOGTXT_INFO);
-
-    printToRawLogFile(RAWLOGFILEHEADER+" "+rawLogFileStartTimestamp+" "+rawLogFileDateFormat.format(rawLogFileStartTimestamp)+"\n");
-  }
-  if ( areWeReadingRawLogFile() ) {
-    //======================//
-    // Open the RAW logfile //
-    //======================//
-    logFileReader = createReader(RAWLogFileName);
-    logTxtLn("Opened RAW    logFile "+RAWLogFileName, LOGTXT_INFO);
-    //    String[] dateVals = match(RAWLogFileName, "Jandy_log_(.*?)-(.*?)-(.*?)_(.*?)_RAW.txt");
-    //    String dateString = dateVals[1]+"/"+dateVals[2]+"/"+dateVals[3]
-    String[] dateVals = match(RAWLogFileName, "Jandy_log_(.*?)_RAW.txt");
-
-    Date df = getDateFromString(dateVals[1]);
-
-    println("FOUND DATE ==>" +dateVals[1]+ " == "+df.getTime()+" == "+df+" ==> "+rawLogFileDateFormat.format(df.getTime()));
-  }
-  //====================//
-  // Print general info //
-  //====================//
-  printSetupInfo();
-  if ( areWeReadingRawLogFile() ) {
-    println("\nProcessing file #"+rawLogFileReadNameBaseNr+" ==> "+logFileNameBase);
+    valuesLogFileHandle = createWriter(logFilesPath+valuesFileName);
+    printToValuesLogFile(createLogFileHeader(VALUESLOGFILEHEADER, logFileStartTimestamp)+"\n");
+    printToValuesLogFile(RAWLOGFILEVERSION+"\n");
+    writeValuesToLogFile(1);
+    logTxtLn("Opened and initialized Values logFile "+valuesFileName+" for writing", LOGTXT_INFO);
+    //====================//
+    // Print general info //
+    //====================//
+    printSetupInfo();
+    if ( areWeReadingRawLogFile() ) {
+      println("\nProcessing file #"+rawLogFileReadNameBaseNr+" ==> "+logFileNameBase);
+    }
   }
   return true;
 }
 
-Date getDateFromString(String str) {
-  Date df = new Date();
+String printLong(long val) {
+  return String.valueOf(val);
+  /*
+  String opt ="";
+   long divisor = 10000000L;
+   long valMS   = val/divisor;
+   int valMSint = int(valMS);
+   long tmp = divisor*valMSint;
+   long valLS = val - tmp;
+   int valLSint = int(valLS);
+   //opt = str(tmp)+"==>"+str(valMS)+"="+str(valMSint)+" "+str(valLS)+"="+str(valLSint);
+   if ( valMSint > 0 ) {
+   opt = str(valMSint)+str(valLSint);
+   } else {
+   opt = str(valLSint);
+   }
+   return opt;
+   */
+}
+
+boolean testValuesFileNameForWriting(String fileName ) {
+  File fValues = new File(dataPath(fileName));
+  if ( (fValues.exists())&(dontOverWriteOutputFiles) ) {
+    println("Output logFile "+fileName+" already exists, skipping!");
+    return false;
+  }
+  return true;
+}
+
+//void openWriteLogFile(String fileBase, String fileName, String description) {
+//}
+
+void closeReadLogFile() {
+  logTxtLn("Closing RAW logFile "+RAWLogFileRead.fileName, LOGTXT_INFO);
+  try {
+    RAWLogFileRead.handle.close();
+  } 
+  catch (IOException e) {
+    println("Oh Oh!");
+    e.printStackTrace();
+  }
+}
+
+void closeWriteLogFile(PrintWriter fileHandle) {
+  //try {
+  fileHandle.close();
+  //} 
+  //catch (IOException e) {
+  //  println("Oh Oh!");
+  //  e.printStackTrace();
+  //}
+}
+
+String readLogFileLine() {
+  String readLine;
+  try {
+    readLine = RAWLogFileRead.handle.readLine();
+  } 
+  catch (IOException e) {
+    e.printStackTrace();
+    readLine = null;
+  }  
+  return readLine;
+}
+
+void verifyAndCorrectRAWLogFileRead(String filePath, String fileName, boolean dryRun ) {
+  RAWLogFileRead.fileName = fileName;
+  RAWLogFileRead.filePath = filePath;
+  logTxtLn("Verifying RAW logFile "+RAWLogFileRead.fileName, LOGTXT_INFO);
+  String fullFileNamePath = RAWLogFileRead.filePath+RAWLogFileRead.fileName;
+  //=============================================//
+  // Check if file exists and has the right name //
+  //=============================================//
+  File fRAW = new File(dataPath(fullFileNamePath));
+  if ( !fRAW.exists() ) {
+    logTxtLn("RAW logFile "+RAWLogFileRead.fileName+" does not exist. Aborting!", LOGTXT_WARNING);
+    RAWLogFileRead.errorCode = RAWLOGFILEDOESNOTEXIST;
+  } else {
+    File fileTest = new File(fullFileNamePath);
+    String[] dateVals = match(RAWLogFileRead.fileName, "Jandy_log_(.*?)_RAW.txt");
+    Date df = getDateFromString(dateVals[1], fileTest.lastModified());
+    logTxtLn("Date from RAW logFile name = " +dateVals[1]+ " == "+df.getTime()+" == "+df+" ==> "+rawLogFileDateFormat.format(df.getTime()), LOGTXT_INFO);
+    // Create new logFileName
+    String testFileName = getRAWLogFileName(df.getTime());
+    // String testFileName = "Jandy_log_"+rawLogFileDateFormat.format(df.getTime())+RAWLogFileExtension; // Record log data to this file
+    if ( !RAWLogFileRead.fileName.equals(testFileName) ) {
+      logTxtLn("RAW logFile NAME NOT CONSISTENT! "+RAWLogFileRead.fileName+" <==>"+testFileName, LOGTXT_WARNING);
+      // Update filename
+      renameRAWLogFile(testFileName);
+    }
+    // Get log file start timestamp from existing RAW log file
+    logFileStartTimestamp = df.getTime();
+    if ( RAWLogFileRead.errorCode != RAWLOGFILEDOESNOTEXIST ) {
+      RAWLogFileRead.handle = createReader(RAWLogFileRead.filePath+RAWLogFileRead.fileName);
+      RAWLogFileRead.hasTimeStamp = 0;
+      //=================================//
+      // Read first line in RAW log file //
+      //=================================//
+      RAWLogFileRead.headerReadLine = readLogFileLine();
+      if (RAWLogFileRead.headerReadLine == null) {
+        // Something is wrong
+        println("Whoops, the file "+logFileNameBase+RAWLogFileExtension+" seems to be empty!");
+        RAWLogFileRead.errorCode = RAWLOGFILEISEMPTY;
+      } else {
+        if ( RAWLogFileRead.headerReadLine.indexOf(RAWLOGFILEHEADER) == 0 ) {
+          long timeStamp = getLogFileTimeStampMS(RAWLogFileRead.headerReadLine, RAWLOGFILEHEADER);
+          RAWLogFileRead.hasTimeStamp = 1;
+          RAWLogFileRead.needsUpdate  = 0;
+          if ( timeStamp == -1 ) {
+            // No Date found
+            logTxtLn("No Data found inside the RAW logFile, reusing the logFileStartTimestamp", LOGTXT_INFO);
+            RAWLogFileRead.needsUpdate = 1;
+            RAWLogFileRead.timeStamp   = logFileStartTimestamp;
+          } else {
+            RAWLogFileRead.timeStamp = timeStamp;
+          }
+          logTxtLn("Found date from Header "+RAWLogFileRead.timeStamp+" = "+rawLogFileDateFormat.format(RAWLogFileRead.timeStamp), LOGTXT_INFO);
+          if ( logFileStartTimestamp != RAWLogFileRead.timeStamp ) {
+            long deltaVal = RAWLogFileRead.timeStamp - logFileStartTimestamp;
+            logTxtLn("logFileStartTimestamp="+logFileStartTimestamp+" != rawLogFileTimeStamp="+RAWLogFileRead.timeStamp+" Delta: "+deltaVal, LOGTXT_WARNING);
+            renameRAWLogFile(getRAWLogFileName(RAWLogFileRead.timeStamp));
+          }
+          // Read the DATA line
+          logTxtLn("Reading RAW logFile data line", LOGTXT_INFO);
+          RAWLogFileRead.dataReadLine = readLogFileLine();
+          closeReadLogFile();
+          if (RAWLogFileRead.dataReadLine == null) {
+            // Something is wrong
+            println("Whoops, the file "+logFileNameBase+RAWLogFileExtension+" seems to be empty past the TIMESTAMP header!");
+            RAWLogFileRead.errorCode = RAWLOGFILEISEMPTY;
+          } else {
+            if ( RAWLogFileRead.needsUpdate == 1 ) {
+              //============================//
+              //Rewrite Current RAW LogFile //
+              //============================//
+              closeReadLogFile();
+              if ( !dryRun ) { 
+                RAWLogFileWriterHandle = createWriter(RAWLogFileRead.filePath + RAWLogFileRead.fileName);
+                logTxtLn("Rewriting RAW logFile "+RAWLogFileRead.fileName, LOGTXT_INFO);
+                printToRawLogFile(createLogFileHeader(RAWLOGFILEHEADER, logFileStartTimestamp), RAWLogFileWriterHandle);
+                //          printToRawLogFile(RAWLOGFILEHEADER+" "+logFileStartTimestamp+" "+rawLogFileDateFormat.format(logFileStartTimestamp)+"\n");
+                printToRawLogFile(RAWLogFileRead.dataReadLine, RAWLogFileWriterHandle);
+                closeWriteLogFile(RAWLogFileWriterHandle);
+                println(" `--> Finished");
+              }
+            }
+          }
+        } else {
+          RAWLogFileRead.errorCode = RAWLOGFILEWRONGHEADER;
+        }
+      }
+    }
+  }
+}
+
+String getRAWLogFileName(long timeStamp) {
+  String fileName =getLogFileNameBase(timeStamp)+RAWLogFileExtension; // Record log data to this file
+  return fileName;
+}
+
+void renameRAWLogFile(String newFileName ) {
+  logTxtLn("Renaming RAW logFile! "+RAWLogFileRead.fileName+" ==> "+newFileName, LOGTXT_INFO);
+  //logTxtLn("Renaming RAW logFile! "+RAWLogFileRead.filePath +RAWLogFileRead.fileName+" ==> "+RAWLogFileRead.filePath +newFileName, LOGTXT_INFO);
+  File ff = new File(RAWLogFileRead.filePath + RAWLogFileRead.fileName);
+  ff.renameTo(new File(RAWLogFileRead.filePath + newFileName));
+  RAWLogFileRead.fileName = newFileName;
+}
+
+String createLogFileHeader(String header, long timeStamp) {
+  String opt = header+" "+timeStamp+" "+rawLogFileDateFormat.format(timeStamp);
+  return opt;
+}
+
+Date getDateFromString(String str, long backupDate) {
+  //Date df = new Date();
+  Date df = noDateFound;
   try {
     // rawLogFileDateFormat = new SimpleDateFormat("dd-MM-yyyy_HH:mm:ss");
     df =  rawLogFileDateFormat.parse(str);
@@ -178,23 +359,34 @@ Date getDateFromString(String str) {
   catch (Exception e) {
     //print("EXC: "+e);
     try {
-      df =  rawLogFileDateFormatShort.parse(str);
+      df =  OLDrawLogFileDateFormatShort.parse(str);
     }
     catch (Exception eS) {
-      print("EXC: "+eS);
+      try {
+        df = OLDrawLogFileDateFormat.parse(rawLogFileDateFormat.format(backupDate));
+      }
+      catch (Exception eL) {
+        //print("EXC: "+eL);
+        logTxtLn("EXC: "+eL, LOGTXT_ERROR);
+      }
     }
   }
   return df;
 }
 
-void printToRawLogFile( String str ) {
+void printToRawLogFile( String str, PrintWriter fileHandle ) {
   //print("PRRWLF "+str+"<<");
-  rawLogFileHandle.print(str);
-  rawLogFileHandle.flush();
-  rawLogFileValuesWritten++;
-  if ( rawLogFileValuesWritten >= rawLogFileValuesWrittenMax ) {
+  fileHandle.print(str);
+  fileHandle.flush();
+  RAWLogFileValuesWritten++;
+  if ( RAWLogFileValuesWritten >= RAWLogFileValuesWrittenMax ) {
     newLogFilesNeeded = true;
   }
+}
+
+void printToValuesLogFile( String str ) {
+  valuesLogFileHandle.print(str);
+  valuesLogFileHandle.flush();
 }
 
 String getRawLogFileReadNameBase() {
@@ -239,7 +431,7 @@ void flushLogFiles() {
 }
 
 void closeLogFiles() { 
-  logTxtLn("Closing LOG Files", LOGTXT_INFO);
+  logTxtLn("Closing logFiles", LOGTXT_INFO);
   if (!(logFileHandle == null) ) {
     logFileHandle.close();
   }
@@ -252,10 +444,6 @@ boolean startNewLogFiles() {
   closeLogFiles();
   return initLogFiles();
 }
-
-
-
-
 
 void initValues() {
   // Clear logTxtStrings
@@ -274,9 +462,9 @@ void initValues() {
   //==================//
   // Log File Handles //
   //==================//
-  logFileHandle       = null;
-  valuesLogFileHandle = null;
-  rawLogFileHandle    = null;
+  logFileHandle          = null;
+  valuesLogFileHandle    = null;
+  RAWLogFileWriterHandle = null;
 
   emulatorCommandsInQueue          = 0;
   emulatorDataValuesCtr            = 0;
@@ -294,19 +482,31 @@ void initValues() {
   LOG_PUMPRPM_VAL  = "NA";
   LOG_PUMPWATT_VAL = "NA";
   LOG_AIRTEMP_VAL  = "NA";
+  LOG_SPATEMP_VAL  = "NA";
   LOG_POOLTEMP_VAL = "NA";
-
+  // NEED TO ADD LOG_DEVICES_LIST
 
   WATERTEMP ="?" ;
   BOXTEMP = "?";
 
   toggleNr = 0;
-  rawLogFileHasBeenRead = 0;
-  rawLogFileHasTimestamp = 1;
   lastLogTimeStampMicroTime     = 0;
   currentByteTimeStampMicroTime = 0;
   initByteTimeStampMicroTime    = 0;
-  rawLogFileReadLine = "";
+  RAWLogFileRead.dataReadLine = "";
+  RAWLogFileRead.hasTimeStamp = 1;
+  RAWLogFileRead.errorCode = RAWLOGFILEISGOOD;
+  RAWLogFileRead.fileName = "";
+  RAWLogFileRead.filePath = "";
+  RAWLogFileRead.handle = null;
+  RAWLogFileRead.timeStamp = 0;
+  RAWLogFileRead.headerReadLine = "";
+  RAWLogFileRead.dataReadLine = "";
+  RAWLogFileRead.needsUpdate = 0;
+  RAWLogFileRead.dataPosition = 0;
+  RAWLogFileRead.dataLength = 0;
+  RAWLogFileRead.nrBytes = 0;
+  RAWLogFileRead.Incr = 0;
 
   currentEmulatorTime               = getAccurateMilliTime();
   newEmulatorActionTime             = currentEmulatorTime + powerCenterEmulatorTimeout;
@@ -331,7 +531,6 @@ void initValues() {
   checkSumIn = -1;
   checkSumErrorString = "";
   checkSumError = -1;
-  logRawData                      = 1;
   droppedCtr                      = 0;
   previouslastReceivedByteTimeMicro   = 0;
   lastReceivedByteTimeMicro           = 0;
@@ -358,13 +557,8 @@ void initValues() {
 
   waitingForNextStepClick = 0; //Used as a boolean to step through the emulator
 
-  rawLogFileIncr = 1;
-  rawLogFileDataLength = 0;
-  rawLogFileNrBytes = 0;
   rawLogFileTimestampDelta = 0;
   rawLogFileDataVal = 0;
-  rawLogFileDataPosition = 0;
-  stillProcessingRAWLogFile = true;
   waitingForReplayDelay = false;
   replayDelayEndTime = 0;
   displayToggleButtonState = 0;
@@ -374,25 +568,110 @@ void initValues() {
   receiveLineBusy                  = 0;
   logTxtStringLnCount  = 0;
 
-  destinationID             = DEV_UNKNOWN_MASK;
-  lastDestinationName    = "NOT SET";
+  destinationID       = DEV_UNKNOWN_MASK;
+  lastDestinationName = "NOT SET";
 
   replayTime0 = 0;
   replayTimeD = 0;
 
   lastValuesLogString = "";
-
+  lastValuesLogTime = "";
+  lastValuesLogSkipped = 0;
   try {
-    noDateFound = rawLogFileDateFormat.parse("01-01-2000_00:00:00.000");
+    noDateFound = rawLogFileDateFormat.parse(rawLogFileDateFormat.format(0));
   } 
   catch (Exception e) {
     print("EXCEPTION: "+e);
   }
   //println("NO DATE: "+noDateFound);
+
+  // Create a list of all CTL devices
+  for ( int i = 0; i<CTL_EXPECTED_BUTTSTAT_BYTES; i++ ) {
+    processDataValues[i] = 0xFF;
+  }
+  CTLDEVICESLIST = checkCTLButtonStatus(0, CTL_EXPECTED_BUTTSTAT_BYTES);
+  CTLDEVICESLISTSPLIT = split(CTLDEVICESLIST, " ");
+  LOG_DEVICES_LIST = new int[CTLDEVICESLISTSPLIT.length];
+  //  for ( int i=0; i< CTLDEVICESLISTSPLIT.length; i++ ) {
+  //    LOG_DEVICES_LIST[i] = 0;
+  //  }
+
+  TimeZone tz = TimeZone.getTimeZone("America/Los_Angeles");
+  rawLogFileDateFormat.setTimeZone(tz);
+  rawLogFileDateFormatShort.setTimeZone(tz);
+  OLDrawLogFileDateFormat.setTimeZone(tz);
+  OLDrawLogFileDateFormatShort.setTimeZone(tz);
+  rawLogFileDateFormat.setTimeZone(tzLocal); // ??????????????? FROM PROCESSVALUESFILES
 }
 
 String cleanText(float number, int afterComma, int total) {
   String val = nfc(number, afterComma);
   val = addSpaces("", total-val.length())+val;
   return val;
+}
+
+String printElapsedTime(long elapsedTime) {
+  String optStr = "";
+  int printRest = 0;
+  long days = elapsedTime/(1000*24*60*60);
+  if ( days > 0 ) {
+    optStr += days+"D ";
+    elapsedTime -= days*1000*24*60*60;
+    printRest = 1;
+  }
+  long hours = elapsedTime/(1000*60*60);
+  if ((hours > 0 )||( printRest == 1 )) {
+    optStr += hours+"H ";
+    elapsedTime -= hours*1000*60*60;
+    printRest = 1;
+  }
+  long minutes = elapsedTime/(1000*60);
+  if ((minutes > 0)||( printRest == 1 ) ) {
+    optStr += minutes+"M ";
+    elapsedTime -= minutes*1000*60;
+    printRest = 1;
+  }
+  long seconds = elapsedTime/(1000);
+  if ((seconds > 0)||( printRest == 1 ) ) {
+    optStr += seconds+"S ";
+    elapsedTime -= seconds*1000;
+    printRest = 1;
+  }
+  if ((elapsedTime > 0)||( printRest == 1 ) ) {
+    optStr += elapsedTime+"mS ";
+  }
+  return optStr;
+}
+
+long getAccurateMilliTime() {
+  long accuTime = System.nanoTime()/1000000;
+  return accuTime;
+}
+
+long getAccurateMicroTime() {
+  long accuTime = System.nanoTime()/1000;
+  return accuTime;
+}
+
+long getLogFileTimeStampMS(String rawLogFileReadLine, String header) {
+  // Returns the timestamp from the _Values.txt log file header in MS
+  if ( rawLogFileReadLine.indexOf(header) == 0 ) {
+    rawLogFileReadLine += " -1";
+    rawLogFileReadLine = rawLogFileReadLine.substring(header.length());
+    String[] tmpVals = split(rawLogFileReadLine, " ");
+    if ( (tmpVals.length < 4)||(tmpVals[3] == "-1") ) {
+      return -1;
+    } else {
+      return Long.valueOf(tmpVals[1]);
+    }
+  }
+  return -1;
+}
+
+String addSpaces(String Str, int nrOfSpaces) {
+  int nrSpacesAdded = nrOfSpaces-Str.length();
+  for (int i=0; i< nrSpacesAdded; i++ ) {
+    Str += " ";
+  }
+  return Str;
 }

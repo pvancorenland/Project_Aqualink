@@ -16,23 +16,27 @@ void readSetupValues() {
   // debug                       |= DEBUG_ALWAYSPRINTLOGTXTSTRINGNUMBERS;
 
   verboseDataDebugLevel = 0;
+  dontOverWriteOutputFiles = true;
 
+  //=================//
+  // Display Options //
+  //=================//
   displayOptionNameList = "Display options           = \"";
   setDisplayOption("showUnprocessedData", false);  // Show the incoming hex bytes before they are processed
-  setDisplayOption("showRawIncomingHexData", true);  // Show incoming data (in HEX) as it is being read
+  setDisplayOption("showRawIncomingHexData", false);  // Show incoming data (in HEX) as it is being read
   setDisplayOption("showVerboseDataInLog", true);  // Show Verbose Data in the log file
   setDisplayOption("suppressChecksumErrors", false);  // Don't complain about Checksum errors
   setDisplayOption("showDroppedData", true);  // Show the dropped data (due to checksum errors, colissions,...)
   setDisplayOption("dontShowZeroACKData", false);  // Don't show the data values following an ACK if they're all 0
   setDisplayOption("onlyShowNewStrings", false);  // Only show decoded data if it is new
-  setDisplayOption("dontShowEmptyProbes", false);  // Don't show probes that have not been responded to
+  setDisplayOption("dontShowEmptyProbes", true);  // Don't show probes that have not been responded to
   setDisplayOption("showTimeDeltas", true);  // Show time delta since last data
   setDisplayOption("suppressReadoutWarnings", false);  // Suppress warnings about the readout (Dropped packets,...) 
   setDisplayOption("suppressReadoutInfo", false);  // Suppress info about the readout (LOGTXT_INFO lines)
-  setDisplayOption("suppressReadoutErrors", false);  // Suppress errors about the readout (Dropped packets,...)
+  setDisplayOption("suppressReadoutErrors", true);  // Suppress errors about the readout (Dropped packets,...)
   setDisplayOption("showCommandResponse", true);  // Show the response to the MASTER
   setDisplayOption("addSpaceBetweenDevices", false);  // Add extra line between device outputs
-  setDisplayOption("showProcessedBytesStatistics", false);  // Show Statistics about the processed bytes
+  setDisplayOption("showProcessedBytesStatistics", true);  // Show Statistics about the processed bytes
   setDisplayOption("pulseDrawWithZeros", false);  // Send 0x00 on serial port (if applicable) everytime the draw() loop restarts
   setDisplayOption("addCSValueToLogTxt", false);  // Show checksum values in logTxt prints
   setDisplayOption("reportDataInDecimal", false); // Report data in decimal instead of hex
@@ -40,43 +44,33 @@ void readSetupValues() {
   setDisplayOption("useSteppedReplay", false); // 
   setDisplayOption("toggleSteppedReplay", false); // 
   setDisplayOption("printReplayStatistics", false); // 
-  setDisplayOption("onlyReportNewValuesinLog", false); // 
+  setDisplayOption("onlyReportNewValuesinLog", true); // 
   setDisplayOption("useRefreshTime", true); // 
-
+  setDisplayOption("showMemoryStatistics", false); // 
 
   displayOptionNameList += "\"";
 
   showDisplayOptions = 0;
-  showInfoTextCanvas = 0;
-  showPlayButton     = 0;
+  showInfoTextCanvas = 1;
+  showPlayButton     = 1;
   showValuesCanvas   = 1;
 
-  //==========================//
-  //   CUSTOMIZE THIS SECTION //
-  //==========================//
-  //logFilesPath           = "/Users/pjvancor/logFiles/";
+  //========================//
+  // CUSTOMIZE THIS SECTION //
+  //========================//
 
   // Record or read data to/from file
-  readFileData               = 0;  // Read data from a previously recorded file (name defined by rawLogFileReadNameBase below)
-  // If this value == 1, it will reread and process the file
-  // if this value == 2, it will reread and replay once
-  // If this value == 3, it will reread and loop a replay
+  readFileData = READFILEDATA_CREATE;       // Default mode - read the data, process and record it
+  // readFileData = READFILEDATA_READ ;        // reread and potentially fix the file, but don't process
+  // readFileData = READFILEDATA_READ_PROCESS; // reread and process the file
+  // readFileData = READFILEDATA_REPLAY_ONCE;  // reread and replay once
+  // readFileData = READFILEDATA_REPLAY_LOOP;  // reread and loop a replay
+
   replayDelay                = 50; // Delay between replayed Commands or Responses
   powerCenterEmulatorTimeout = 50;
-  // rawLogFileReadNameBase = "Jandy_log_94201518599_Jacy_Chemlink"; // Read from this file if readFileData==1
+  // rawLogFileReadNameBase = "Jandy_log_94201518599_Jacy_Chemlink"; 
   // rawLogFileReadNameBase = "Jandy_log_942015185411_Jacy1";
-  // rawLogFileReadNameBase = "Jandy_log_2192014151950";
-  // rawLogFileReadNameBase = "Jandy_log_1542015215916";
-  // rawLogFileReadNameBase = "home_Capture_051015";
-  // rawLogFileReadNameBase = "Home_Capture_051815";
-  // rawLogFileReadNameBase = "Jandy_log_225201515402";
-  // rawLogFileReadNameBase = "OneLinkTouch_Chemlink";
-  // rawLogFileReadNameBase = "Jandy_log_106201512942";
-  // rawLogFileReadNameBase = "Jandy_log_2162015124241";
   // rawLogFileReadNameBase = "POOL_REFILL";
-  // rawLogFileReadNameBase = "test";
-  // rawLogFileReadNameBase = "test2";
-  // rawLogFileReadNameBase = "test3";
   // rawLogFileReadNameBase = "ONETOUCH_STARTUP";
   // rawLogFileReadNameBase = "ONETOUCH_DISPLAY";
   // rawLogFileReadNameBase = "ONETOUCH_DISPLAY_2";
@@ -86,49 +80,19 @@ void readSetupValues() {
   // rawLogFileReadNameBase = "ONETOUCH_HIGHLIGHT_LINES";
   // rawLogFileReadNameBase = "Onetouch_on_Live_System";
   // rawLogFileReadNameBase = "Onetouch_Showing_ABOUT_with_Highlight";
-  // rawLogFileReadNameBase = "INCREASING_NUMBERS";
-  // rawLogFileReadNameBase = "Jandy_log_192015231128" ;
-  // rawLogFileReadNameBase = "ONETOUCH_STARTUP_SCROLL";
-  // rawLogFileReadNameBase = "ONETOUCH_SCROLL_UP";
-  // rawLogFileReadNameBase = "ONETOUCH_INDIVIDUAL_HIGHLIGHTS_ON_CHEMLINK";
-  // rawLogFileReadNameBase = "ONETOUCH_HIGHLIGHT_SECTIONS";
-  // rawLogFileReadNameBase = "ONETOUCH_HIGHLIGHT_ORP_SETUP";
-  // rawLogFileReadNameBase = "Jandy_log_392015195127";
-  // rawLogFileReadNameBase = "Jandy_log_2892015235515";
-  // rawLogFileReadNameBase = "Jandy_log_299201519540";
-  // rawLogFileReadNameBase = "Jandy_log_3102015224816";
-  // rawLogFileReadNameBase = "Jandy_log_310201511346";
-  // rawLogFileReadNameBase = "Jandy_log_310201511346_SHORT";
-  // rawLogFileReadNameBase = "Jandy_log_2892015235515"; // HUGE file
-  // rawLogFileReadNameBase = "Jandy_log_4102015164750";
-  // rawLogFileReadNameBase = "Jandy_log_4102015164750_SMALL";
-  // rawLogFileReadNameBase = "Jandy_log_2292015232447";
-  // rawLogFileReadNameBase = "Jandy_log_111201510522";
-  // rawLogFileReadNameBase = "test";
-  // rawLogFileReadNameBase = "Jandy_log_2112015223543_SHORT";
-  // rawLogFileReadNameBase = "Jandy_log_2112015204650";
   // rawLogFileReadNameBase = "System_Restart_Couldnt_find_Chemlink";
   // rawLogFileReadNameBase = "System_Restart_Couldnt_find_Chemlink_SHORT";
-  // rawLogFileReadNameBase = "Jandy_log_111201510522";
-  // rawLogFileReadNameBase = "Jandy_log_10520150014";
-  // rawLogFileReadNameBase = "Jandy_log_2292015232447";
-  // rawLogFileReadNameBase = "Jandy_log_2552015174829";
-  // rawLogFileReadNameBase = "Jandy_log_116201501124";
-  // rawLogFileReadNameBase = "Jandy_log_2362015142933";
-  // rawLogFileReadNameBase = "Jandy_log_1112015204457";
-  // rawLogFileReadNameBase = "Jandy_log_229201520163";
-  // rawLogFileReadNameBase = "Jandy_log_1472015122917";
   // rawLogFileReadNameBase = "POOL_REFILL_SHORT";
   // rawLogFileReadNameBase = "POOL_REFILL";
-  // rawLogFileReadNameBase = "Jandy_log_1082015161644";
-  // rawLogFileReadNameBase = "Jandy_log_1112015204457";
-  //rawLogFileReadNameBase = "Jandy_log_262015175420";
-  // rawLogFileReadNameBase = "Jandy_log_27-12-2015_12:56:07";
   // rawLogFileReadNameBase = "Jandy_log_94201518599_Jacy_Chemlink";
-  // rawLogFileReadNameBase = "test";
-  rawLogFileReadNameBase = "Jandy_log_10-02-2016_21:39:54";
-  rawLogFileReadNameBase = "Jandy_log_02-11-2016_22:58:09.234";
-  rawLogFileReadNameBase = "Jandy_log_02-11-2016_23:10:52.126";
+  //rawLogFileReadNameBase = "Jandy_log_2016-04-02_09-03-43-000";
+  //rawLogFileReadNameBase = "Jandy_log_2016-03-31_15-03-43-000";
+  //rawLogFileReadNameBase = "Jandy_log_2016-04-10_10-34-19-000";
+  //rawLogFileReadNameBase = "Jandy_log_2016-04-17_03-30-01-362";
+  //rawLogFileReadNameBase = "Jandy_log_2016-03-04_23-46-19-607";
+  //rawLogFileReadNameBase = "Jandy_log_2016-04-17_03-30-01-362";
+  //rawLogFileReadNameBase = "Jandy_log_2016-03-04_23-46-19-607";
+  rawLogFileReadNameBase = "Jandy_log_2016-09-10_18-11-40-381";
 
   useLogFileNameBase = "";  // If this is "", the logFile name Base will be date derived
 
@@ -141,6 +105,7 @@ void readSetupValues() {
   // addDeviceDisplayMask(0x33);
   // addDeviceDisplayMask{emulatePowerCenterIDs[0]);
   // addDeviceDisplayMask{emulateID);
+  // addDeviceDisplayMask(DEV_CTL_MASK);
   // addDeviceDisplayMask(DEV_AQUALINK_MASK);
   // addDeviceDisplayMask(DEV_AQUARITE_MASK+1);
   // addDeviceDisplayMask(DEV_PCDOCK_MASK);
@@ -173,6 +138,7 @@ void readSetupValues() {
   //======================================//
   // Set up COM port for RS485 connection //
   //======================================//
+  // The blackListPorts will not be used
   blackListPorts.add("/dev/cu.Bluetooth-Incoming-Port");
   blackListPorts.add("/dev/cu.Bluetooth-Modem");
   blackListPorts.add("/dev/tty.Bluetooth-Incoming-Port");
@@ -187,6 +153,7 @@ void readSetupValues() {
   blackListPorts.add("/dev/ttyAMA0");
   blackListPorts.add("/dev/ttyS0");
 
+  // If readComPortName is set, it will be the COM port that is used
   // readComPortName            = "COM6";      // Active COM port connected to Simulator or RS485 port
   // readComPortName            = "/dev/tty.usbserial-DA00U8Q4"
   // readComPortName            = "/dev/tty.wchusbserial14130";
@@ -224,30 +191,49 @@ void readSetupValues() {
   addValueToLogfile(LOG_PUMPWATT_INCLUDE);
   addValueToLogfile(LOG_AIRTEMP_INCLUDE);
   addValueToLogfile(LOG_POOLTEMP_INCLUDE);
+  addValueToLogfile(LOG_SPATEMP_INCLUDE);
+  addValueToLogfile(LOG_DEVICES_LIST_INCLUDE);
 
-  setupLOGFiles();
-
+  //==============================//
+  // No more customizations below //
+  //==============================//
+  setupLogFiles();
   //=======================================//
   //=== Report ============================//
   //=======================================//
 
   initDeviceDisplayMasks();
   initEmulatePowerCenterIDs();
-  debugMasksList = "DEBUG Mask                = "+reportVal(debug, 2);
-  reportValuesInLogfileList = "REPORT Values in Log File = "+binary(reportValuesInLogfile, 16);
-  logValueGroupsEnabled = "LOG Values groups         = "+logValueGroupsEnabled;
+  debugMasksList = "DEBUG Mask                          = "+reportVal(debug, 2);
+  reportValuesInLogfileList = "REPORT Values in logFile = "+binary(reportValuesInLogfile, 16);
+  logValueGroupsEnabled = "LOG Values groups            = "+logValueGroupsEnabled;
   if ( showDisplayOptions + showInfoTextCanvas + showPlayButton + showValuesCanvas == 0 ) {
     enableGUI = false;
   }
   addSpaceBetweenDevicesOptionSelected = displayThisOption("addSpaceBetweenDevices"); //store this value
 }
 
+void processPassedArguments() {
+  if ( args != null ) {
+    for (int i=0; i<args.length; i++) {
+      println("ARG #"+i+" = "+(String)args[i]);
+    }
+  }
+}
+
+boolean areWeReadingReadFile() {
+  return ( readFileData != READFILEDATA_CREATE );
+}
+
+//=======================================================================================================//
+//=======================================================================================================//
+//=======================================================================================================//
 void initSerialPort() {
   if (( areWeReadingRawLogFile() )&( areWeEmulatingPowerCenter())) {
     logTxtLn("Turning off Power Center Emulation because readFileData="+readFileData, LOGTXT_INFO);
     emulatePowerCenterIDsCtr = 0;
   }
-  if ( (readFileData != 1) ) {
+  if ( (!areWeReadingReadFile()) ) {
     //===========================//
     // Check for valid COM Ports //
     //===========================//
@@ -302,14 +288,14 @@ void initSerialPort() {
 }
 
 
-void setupLOGFiles() {
-  if ( readFileData != 0 ) {
+void setupLogFiles() {
+  logFilesPath =   sketchPath() +"/"+logFilesPath; 
+  if ( areWeReadingRawLogFile()) {
     //===============================//
     // Create log file basename list //
     //===============================//
     rawLogFileReadNameBaseNr = 0;
     rawLogFileReadNameBaseNrOfFiles = 0;
-    logFilesPath =   sketchPath() +"/"+logFilesPath; 
     boolean rawLogFileReadNameBaseIsEmpty = true;
     //if ( rawLogFileReadNameBase != "" ) {
     //}
@@ -336,7 +322,9 @@ void setupLOGFiles() {
       } else {
         for (int fileNr=0; fileNr<fileNames.length; fileNr++ ) {
           if ( fileNames[fileNr].endsWith(RAWLogFileExtension) ) {
-            println("F: "+fileNames[fileNr]);
+            if ( showDebug(DEBUG_DETAILS) == 1 ) {
+              println("F: "+fileNames[fileNr]);
+            }
             rawLogFileReadNameBaseList.add(fileNames[fileNr].replace(RAWLogFileExtension, ""));
             baseListNr++;
             //foundAtleastOneFile = false;
@@ -349,8 +337,8 @@ void setupLOGFiles() {
 }
 
 void readAndStartReplayOfRAWLogFile() {
-  if ( areWeReadingRawLogFile() ) {
+  if ( areWeProcessingRAWLogFile() ) {
     readRawLogFile();
-    rawLogFileDataPosition = 0;
+    RAWLogFileRead.dataPosition = 0;
   }
 }
