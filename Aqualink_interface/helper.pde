@@ -42,7 +42,7 @@ void showMemory() {
       // dialog box to increase the memory settings for an application.
       long maximum = Runtime.getRuntime().maxMemory();
       String memStats = "Tot Memory: "+showHumanReadable(allocated) + " / Free Memory: "+showHumanReadable(free) + " / Max Memory: "+showHumanReadable(maximum);
-      if (!(logFileHandle == null) ) {
+      if (!(outputLogFileHandle == null) ) {
         logTxtLn(memStats, LOGTXT_INFO);
       } else {
         println(memStats);
@@ -120,7 +120,7 @@ boolean initLogFiles() {
     println("Output logFile "+outputLogFileName+" already exists, skipping!");
     return false;
   }
-  logFileHandle = createWriter(logFilesPath+outputLogFileName);
+  outputLogFileHandle = createWriter(logFilesPath+outputLogFileName);
   logTxtLn("Opened output logFile "+outputLogFileName+" at: "+d+" = "+logFileStartTimestamp, LOGTXT_INFO);
   //==============//
   // RAW Log file //
@@ -422,8 +422,8 @@ void initLogTimes() {
 }
 
 void flushLogFiles() { 
-  if (!(logFileHandle == null) ) {
-    logFileHandle.flush();
+  if (!(outputLogFileHandle == null) ) {
+    outputLogFileHandle.flush();
   }
   if (!(valuesLogFileHandle == null) ) {
     valuesLogFileHandle.flush();
@@ -432,8 +432,8 @@ void flushLogFiles() {
 
 void closeLogFiles() { 
   logTxtLn("Closing logFiles", LOGTXT_INFO);
-  if (!(logFileHandle == null) ) {
-    logFileHandle.close();
+  if (!(outputLogFileHandle == null) ) {
+    outputLogFileHandle.close();
   }
   if (!(valuesLogFileHandle == null) ) {
     valuesLogFileHandle.close();
@@ -462,7 +462,7 @@ void initValues() {
   //==================//
   // Log File Handles //
   //==================//
-  logFileHandle          = null;
+  outputLogFileHandle          = null;
   valuesLogFileHandle    = null;
   RAWLogFileWriterHandle = null;
 

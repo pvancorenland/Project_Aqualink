@@ -15,7 +15,7 @@ void readSetupValues() {
   // debug                       |= DEBUG_SHOWTIMESTAMPWITHRAWDATA;
   // debug                       |= DEBUG_ALWAYSPRINTLOGTXTSTRINGNUMBERS;
 
-  verboseDataDebugLevel = 0;
+  verboseDataDebugLevel    = 0;
   dontOverWriteOutputFiles = true;
 
   //=================//
@@ -115,7 +115,7 @@ void readSetupValues() {
   // addDeviceDisplayMask(DEV_AQUALINK_2_MASK+3);
   // addDeviceDisplayMask(DEV_ONETOUCH_MASK+3);
   // addDeviceDisplayMask(DEV_CHEMLINK_MASK);
-  // addDeviceDisplayMask(0x160); // Intelliflo pump
+   addDeviceDisplayMask(0x160); // Intelliflo pump
   //addDeviceDisplayMask(0xFF);  // Don't show any devices (just warnings, errors,...)
 
   //==========================================//
@@ -322,7 +322,7 @@ void setupLogFiles() {
       } else {
         for (int fileNr=0; fileNr<fileNames.length; fileNr++ ) {
           if ( fileNames[fileNr].endsWith(RAWLogFileExtension) ) {
-            if ( showDebug(DEBUG_DETAILS) == 1 ) {
+            if ( showDebug(DEBUG_DETAILS) ) {
               println("F: "+fileNames[fileNr]);
             }
             rawLogFileReadNameBaseList.add(fileNames[fileNr].replace(RAWLogFileExtension, ""));

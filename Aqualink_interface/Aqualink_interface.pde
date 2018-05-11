@@ -112,7 +112,7 @@ void draw324345() {
   //=================================
   // splitRAWLogFile
   for ( int i = 0; i< maxRawLogFileNr; i++ ) {
-//    if ( showDebug(DEBUG_DETAILS) == 1 ) {
+//    if ( showDebug(DEBUG_DETAILS) ) {
       println("##########################################");
       println("Splitting FILE: "+logFilesPath+rawLogFileNames[i]);
       println("    =====>");

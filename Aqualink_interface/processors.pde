@@ -32,7 +32,7 @@ boolean processIncomingData(long timestamp, int readData ) {
     //displayVal += getASCIIString(readData);
     displayVal += " ";
     print(displayVal);
-    logFileHandle.print(displayVal);
+    outputLogFileHandle.print(displayVal);
     rawIncomingDataNeedsNewline = 1;
   }
   boolean foundCommandResponse = false;
@@ -56,7 +56,7 @@ boolean processIncomingData(long timestamp, int readData ) {
     printToRawLogFile(timestamp+" ", RAWLogFileWriterHandle);
     printToRawLogFile(readData +" ", RAWLogFileWriterHandle);
   }
-  if ( showDebug(DEBUG_ON) == 1 ) {
+  if ( showDebug(DEBUG_ON) ) {
     logTxt(reportVal(readData, 2)+" ", LOGTXT_DEBUG);
   }
   if ( !recordUnprocessedData(readData) ) {
@@ -462,11 +462,11 @@ int processEquipmentData() {
   return status;
 }
 
-int showDebug(int debugMask) {
+boolean showDebug(int debugMask) {
   if ( (debugMask&debug) == debugMask) {
-    return 1;
+    return true;
   } else {
-    return 0;
+    return false;
   }
 }
 
@@ -476,7 +476,7 @@ void changeReadOutStatus(int statusID) {
   readOutStatus = statusID;
   optString += " ==> " + reportReadOutStatus();
   String debugLine = reportReadOutStatus();
-  if ( showDebug(DEBUG_CHANGEREADOUTSTATUS) == 1) {
+  if ( showDebug(DEBUG_CHANGEREADOUTSTATUS) ) {
     if ( !debugLine.equals("") ) {
       logTxtLn(" ==> Status: "+optString, LOGTXT_DEBUG);
     }
@@ -781,7 +781,7 @@ int processReadChecksumData() {
   }
   checkSumDataValuesCtr = processDataValuesCtr;
   int checkSum = processChecksumData(1);
-  if ( showDebug(DEBUG_ON) == 1 ) {
+  if ( showDebug(DEBUG_ON) ) {
     logTxtLn("CALC CS = "+reportVal(checkSum, 2)+" READ CS = "+reportVal(checkSumIn, 2), LOGTXT_DEBUG);
   }
   return checkSum;
@@ -1237,10 +1237,10 @@ void logTxtLn(int logTxtType) {
       if ( displayThisOption("printDataToScreen") ) {
         println(logTxtString);
       }
-      logFileHandle.println(logTxtString);
+      outputLogFileHandle.println(logTxtString);
     } else {
-      if ( showDebug(DEBUG_ON) == 1 ) {
-        logFileHandle.println("logTxtLn PRINTTHISLINE = 0");
+      if ( showDebug(DEBUG_ON) ) {
+        outputLogFileHandle.println("logTxtLn PRINTTHISLINE = 0");
       }
     }
   }
@@ -1262,7 +1262,7 @@ void logFilePrint(int debugLevel, String txt) {
         rawIncomingDataNeedsNewline = 0;
       }
       print(txt);
-      logFileHandle.print(txt);
+      outputLogFileHandle.print(txt);
     }
   }
 }

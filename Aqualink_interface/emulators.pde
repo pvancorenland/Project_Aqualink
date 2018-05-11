@@ -98,7 +98,7 @@ int processEmulatorData() {
   //  currentOpenPort.write(val);
   //} 
   if ( displayThisOption("showRawIncomingHexData") ) {
-    logFileHandle.print("E");
+    outputLogFileHandle.print("E");
   }
   emulatorDataValuesCtrCurrent++;
   if (emulatorDataValuesCtrCurrent == emulatorDataValuesCtr ) {
@@ -125,7 +125,7 @@ void powerCenterEmulateNext(boolean emulatePowerCenter) {
     currentEmulatorTime = getAccurateMilliTime();
     if ( currentEmulatorTime > newEmulatorActionTime ) {
       if ( (emulatorCommandsInQueue < MAXNROFEMULATORCOMMANDSINQUEUE ) ) {
-        //logFileHandle.println("TIM: "+currentEmulatorTime+" DELTA "+(currentEmulatorTime - newEmulatorActionTime));
+        //outputLogFileHandle.println("TIM: "+currentEmulatorTime+" DELTA "+(currentEmulatorTime - newEmulatorActionTime));
         //println("TIM: "+currentEmulatorTime+" DELTA "+(currentEmulatorTime - newEmulatorActionTime));
         newEmulatorActionTime = currentEmulatorTime + powerCenterEmulatorTimeout;
         sentCommands += 1;

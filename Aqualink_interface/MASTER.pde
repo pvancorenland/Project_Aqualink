@@ -10,7 +10,7 @@ int processResponseToMASTER(int response, int destination) {
     logTxtLn("DESTINATION WAS NOT MASTER in processResponseToMASTER! ", LOGTXT_WARNING);
   }
   int lastDestinationMask = lastDestination&0xF8;
-  //logFileHandle.println("PROCMASTERRESPONSE COMM="+response+" LAST DEST: 0x"+reportVal(lastDestination, 2)+" ==>0x"+reportVal(lastDestinationMask, 2));
+  //outputLogFileHandle.println("PROCMASTERRESPONSE COMM="+response+" LAST DEST: 0x"+reportVal(lastDestination, 2)+" ==>0x"+reportVal(lastDestinationMask, 2));
   switch(lastDestinationMask) {
     case ( DEV_AQUARITE_MASK ) :
     return processAquariteResponse(lastDestination, lastCommand, response, 2, processDataValuesCtr);

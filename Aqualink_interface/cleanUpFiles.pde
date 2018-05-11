@@ -188,14 +188,14 @@ void createLogFilesList() {
   maxRawLogFileNr    = 0;
   for ( int i = 0; i < FNlength; i++ ) {
     if ( isValuesFileName(logFileNames[i]) ) {
-      if ( showDebug(DEBUG_DETAILS) == 1 ) {
+      if ( showDebug(DEBUG_DETAILS) ) {
         println("Adding Values FILE #"+maxValuesLogFileNr+" = Log File #"+i+"/"+FNlength+": "+logFilesPath+logFileNames[i]);
       }
       valuesLogFileNames[maxValuesLogFileNr++] = logFileNames[i];
       delayCountNr = delayOnceInAWhile(delayCountNr, 256, 8); // Delay 8ms every 256 names to catch up
     } else {
       if ( isRawFileName(logFileNames[i]) ) {
-        if ( showDebug(DEBUG_DETAILS) == 1 ) {
+        if ( showDebug(DEBUG_DETAILS) ) {
           println("Adding RAW FILE #"+maxValuesLogFileNr+" = Log File #"+i+"/"+FNlength+": "+logFilesPath+logFileNames[i]);
         }
         rawLogFileNames[maxRawLogFileNr++] = logFileNames[i];
@@ -323,7 +323,7 @@ void recordAndResetSumTimes() {
   //=======//
   // DEBUG //
   //=======//
-  if ( showDebug(DEBUG_DETAILS) == 1 ) {
+  if ( showDebug(DEBUG_DETAILS) ) {
     String debugLine = relativeTimeNowUS+" MAXSUMTIME: "+maxSumTimesUS+" nrSumPts: "+nrSumPts;
     for (int i=0; i< totDataseries; i++ ) {
       debugLine += ">"+sumDatavalues[i]+"/"+sumTimes[i]+"<";

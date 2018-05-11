@@ -250,9 +250,9 @@ long nextLOG_TOGGLE_TIME = millis() + LOG_TOGGLE_TIMEOUT;
 final int EQUIPMENTDATA = 0;
 final int PUMPDATA      = 1;
 
-final String RAWLOGFILEHEADER    = "#RAW LOG FILE WITH TIMESTAMP";
-final String RAWLOGFILEVERSION   = "#VERSION 1";
-final String VALUESLOGFILEHEADER = "#VALUES LOG FILE WITH TIMESTAMP";
+final String RAWLOGFILEHEADER     = "#RAW LOG FILE WITH TIMESTAMP";
+final String RAWLOGFILEVERSION    = "#VERSION 1";
+final String VALUESLOGFILEHEADER  = "#VALUES LOG FILE WITH TIMESTAMP";
 final int RAWLOGFILEISGOOD        = 0;
 final int RAWLOGFILEISEMPTY       = 1;
 final int RAWLOGFILEDOESNOTEXIST  = 2;
@@ -349,7 +349,7 @@ int rawIncomingDataNeedsNewline ;
 // LOG FILE HANDLES              //
 //===============================//
 String logFilesPath           = "../logFiles/"; // Base directory where logfiles are stored
-PrintWriter    logFileHandle;
+PrintWriter    outputLogFileHandle;
 PrintWriter    RAWLogFileWriterHandle;
 PrintWriter    valuesLogFileHandle;
 long           RAWLogFileValuesWritten = 0;
