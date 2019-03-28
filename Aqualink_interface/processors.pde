@@ -204,10 +204,13 @@ boolean processIncomingData(long timestamp, int readData ) {
       pumpCommandLength = -1;
       break;
       case(DLEChar) :
-      logTxt("Found DLE while LOOKINGFORPUMPDATANUL: ", LOGTXT_WARNING);
-      if ( reportAndDropUnprocessedData(-1) == 0 ) {
-        reportDroppedData("LOOKINGFORPUMPDATANUL ==> DLE");
-      }
+      // We found 0xFF - 0x10 the 0xFF is probably a stuffing byte
+      if ( displayThisOption("strictPumpDecodingWarnings") ) {
+        logTxt("Found DLE while LOOKINGFORPUMPDATANUL: ", LOGTXT_WARNING);
+        if ( reportAndDropUnprocessedData(-1) == 0 ) {
+          reportDroppedData("LOOKINGFORPUMPDATANUL ==> DLE");
+        }
+      }      
       changeReadOutStatus(LOOKINGFORSTX);
       break;
     default:

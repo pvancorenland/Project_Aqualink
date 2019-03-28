@@ -595,7 +595,8 @@ void initDisplayOptions() {
   displayOptionsList.add( new displayOptions(true, "onlyReportNewValuesinLog", "Only log new values to _VALUES file"  ) ); //
   displayOptionsList.add( new displayOptions(true, "useRefreshTime", "Process Bytes for refreshTime us"  ) ); //
   displayOptionsList.add( new displayOptions(true, "showMemoryStatistics", "Display Memory Statistics"  ) ); //
-}
+  displayOptionsList.add( new displayOptions(false, "strictPumpDecodingWarnings", "Strict Pump Decoding Warnings"  ) ); //
+  }
 
 
 // From processFiles

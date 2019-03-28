@@ -39,6 +39,8 @@
  
  AQUALINK SIMULATOR <--> USB/RS232
  CONNECT TX to RX and RX to TX
+ Required external libraries (from the library Manager)
+   ControlP5
  */
 import controlP5.*;
 import processing.serial.*;

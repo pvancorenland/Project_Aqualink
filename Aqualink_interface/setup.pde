@@ -28,7 +28,7 @@ void readSetupValues() {
   setDisplayOption("suppressChecksumErrors", false);  // Don't complain about Checksum errors
   setDisplayOption("showDroppedData", true);  // Show the dropped data (due to checksum errors, colissions,...)
   setDisplayOption("dontShowZeroACKData", false);  // Don't show the data values following an ACK if they're all 0
-  setDisplayOption("onlyShowNewStrings", false);  // Only show decoded data if it is new
+  setDisplayOption("onlyShowNewStrings", true);  // Only show decoded data if it is new
   setDisplayOption("dontShowEmptyProbes", true);  // Don't show probes that have not been responded to
   setDisplayOption("showTimeDeltas", true);  // Show time delta since last data
   setDisplayOption("suppressReadoutWarnings", false);  // Suppress warnings about the readout (Dropped packets,...) 
@@ -47,6 +47,8 @@ void readSetupValues() {
   setDisplayOption("onlyReportNewValuesinLog", true); // 
   setDisplayOption("useRefreshTime", true); // 
   setDisplayOption("showMemoryStatistics", false); // 
+  setDisplayOption("strictPumpDecodingWarnings", false);  // Show all decoding errors for pum (Typical when an 0xFF was stuffed between 0x10-0x02 and 0x10-0x03 and the decoder foes into LOOKINGFORPUMPDATANUL
+
 
   displayOptionNameList += "\"";
 
@@ -107,6 +109,7 @@ void readSetupValues() {
   // addDeviceDisplayMask{emulateID);
   // addDeviceDisplayMask(DEV_CTL_MASK);
   // addDeviceDisplayMask(DEV_AQUALINK_MASK);
+  // addDeviceDisplayMask(DEV_AQUALINK_2_MASK);
   // addDeviceDisplayMask(DEV_AQUARITE_MASK+1);
   // addDeviceDisplayMask(DEV_PCDOCK_MASK);
   // addDeviceDisplayMask(DEV_CHEMLINK_MASK);
@@ -115,7 +118,7 @@ void readSetupValues() {
   // addDeviceDisplayMask(DEV_AQUALINK_2_MASK+3);
   // addDeviceDisplayMask(DEV_ONETOUCH_MASK+3);
   // addDeviceDisplayMask(DEV_CHEMLINK_MASK);
-   addDeviceDisplayMask(0x160); // Intelliflo pump
+  // addDeviceDisplayMask(0x160); // Intelliflo pump
   //addDeviceDisplayMask(0xFF);  // Don't show any devices (just warnings, errors,...)
 
   //==========================================//
